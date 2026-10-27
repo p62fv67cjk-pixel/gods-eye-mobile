@@ -1,623 +1,77 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
-  <meta name="theme-color" content="#05080d" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="God's Eye" />
-  <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="./icon.svg" />
-  <title>God's Eye Mobile</title>
-
-  <script src="https://cdn.jsdelivr.net/npm/cesium@latest/Build/Cesium/Cesium.js">
-// Orange NSW verified public camera sources
-document.getElementById("orangePublicCam")?.addEventListener("click", () => {
-  window.open("https://argosatlas.com/en/cameras/australia/nsw/", "_blank", "noopener,noreferrer");
-});
-document.getElementById("orangeLiveTraffic")?.addEventListener("click", () => {
-  window.open("https://www.livetraffic.com/", "_blank", "noopener,noreferrer");
-});
-
-</script>
-  <link href="https://cdn.jsdelivr.net/npm/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-
-  <style>
-    :root {
-      --glass: rgba(9,14,23,.72);
-      --line: rgba(255,255,255,.13);
-      --text: #f4f8ff;
-      --muted: #aeb9c9;
-      --accent: #82ffe2;
-      --danger: #ff7e8b;
-    }
-    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-    html,body,#cesiumContainer { width:100%; height:100%; margin:0; overflow:hidden; background:#05080d; }
-    body { font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif; color:var(--text); }
-    #cesiumContainer { position:fixed; inset:0; }
-    .cesium-viewer-toolbar, .cesium-viewer-animationContainer, .cesium-viewer-timelineContainer,
-    .cesium-viewer-bottom { display:none !important; }
-
-    .top {
-      position:fixed; top:calc(env(safe-area-inset-top) + 10px); left:12px; right:12px;
-      display:flex; gap:8px; z-index:20; pointer-events:none;
-    }
-    .brand, .pill {
-      pointer-events:auto; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
-      background:var(--glass); border:1px solid var(--line); border-radius:16px;
-      box-shadow:0 10px 30px rgba(0,0,0,.28);
-    }
-    .brand { padding:10px 12px; min-width:0; flex:1; }
-    .brand b { font-size:14px; letter-spacing:.08em; text-transform:uppercase; }
-    .brand small { display:block; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .pill {
-      width:44px; height:44px; display:grid; place-items:center; border-radius:50%;
-      color:var(--text); font-size:20px; cursor:pointer;
-    }
-
-    .dock {
-      position:fixed; left:12px; right:12px; bottom:calc(env(safe-area-inset-bottom) + 12px);
-      z-index:20; display:grid; grid-template-columns:repeat(5,1fr); gap:6px;
-      padding:8px; border-radius:22px; background:var(--glass); border:1px solid var(--line);
-      backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
-      box-shadow:0 15px 35px rgba(0,0,0,.35);
-    }
-    .btn {
-      border:0; min-height:54px; border-radius:16px; color:var(--text);
-      background:rgba(255,255,255,.075); font-weight:700; font-size:11px;
-      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
-    }
-    .btn span { font-size:21px; line-height:1; }
-    .btn.active { background:rgba(130,255,226,.16); outline:1px solid rgba(130,255,226,.35); }
-    .sheetWrap { position:fixed; inset:0; z-index:40; display:none; align-items:flex-end; background:rgba(0,0,0,.35); }
-    .sheetWrap.show { display:flex; }
-    .sheet {
-      width:100%; max-height:88vh; overflow:auto; padding:14px 16px calc(env(safe-area-inset-bottom) + 18px);
-      border-radius:26px 26px 0 0; background:#0a0f18; border-top:1px solid var(--line);
-      box-shadow:0 -20px 60px rgba(0,0,0,.45);
-    }
-    .handle { width:44px; height:5px; margin:0 auto 12px; border-radius:10px; background:rgba(255,255,255,.25); }
-    h2 { margin:4px 0 6px; font-size:22px; }
-    p { color:var(--muted); line-height:1.4; margin:6px 0 16px; }
-    label { font-size:12px; color:var(--muted); display:block; margin:12px 0 6px; }
-    input {
-      width:100%; border:1px solid var(--line); background:#111925; color:var(--text);
-      padding:14px 15px; border-radius:14px; font-size:16px; outline:none;
-    }
-    .row { display:flex; gap:8px; margin-top:10px; }
-    .action {
-      flex:1; border:0; border-radius:14px; padding:13px 14px; font-weight:800;
-      background:var(--accent); color:#05110e; font-size:14px;
-    }
-    .secondary { background:#172231; color:var(--text); }
-    .danger { background:#27161a; color:#ffadb6; }
-    .status {
-      position:fixed; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 88px);
-      z-index:25; max-width:88%; padding:9px 12px; border-radius:999px;
-      background:rgba(5,8,13,.82); border:1px solid var(--line); color:#eaf3ff; font-size:12px;
-      opacity:0; transition:.2s; pointer-events:none; text-align:center;
-    }
-    .status.show { opacity:1; }
-    .crosshair {
-      position:fixed; left:50%; top:50%; width:22px; height:22px; transform:translate(-50%,-50%); z-index:10;
-      opacity:.7; pointer-events:none;
-    }
-    .crosshair::before,.crosshair::after { content:""; position:absolute; background:rgba(255,255,255,.7); }
-    .crosshair::before { left:10px; top:0; width:1px; height:22px; }
-    .crosshair::after { top:10px; left:0; height:1px; width:22px; }
-    .mini { font-size:12px; color:var(--muted); }
-    .toggleline { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.07); }
-    .toggleline button { border:0; border-radius:999px; padding:8px 11px; background:#172231; color:var(--text); font-weight:700; }
-    .cameraView { width:100%; aspect-ratio:16/9; background:#020407; border-radius:16px; overflow:hidden; border:1px solid var(--line); margin-top:12px; }
-    .cameraView video { width:100%; height:100%; object-fit:contain; background:#000; }
-    .voiceListening { background:rgba(255,80,110,.22) !important; outline:1px solid rgba(255,120,140,.55); }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<meta name="theme-color" content="#05080d" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="God's Eye" />
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="apple-touch-icon" href="./icon.svg" />
+<title>God's Eye Mobile</title>
+<script src="https://cdn.jsdelivr.net/npm/cesium@latest/Build/Cesium/Cesium.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+<style>
+:root{--glass:rgba(9,14,23,.76);--line:rgba(255,255,255,.14);--text:#f4f8ff;--muted:#aeb9c9;--accent:#82ffe2;--danger:#ff7e8b}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body,#cesiumContainer{width:100%;height:100%;margin:0;overflow:hidden;background:#05080d}body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;color:var(--text)}#cesiumContainer{position:fixed;inset:0}.cesium-viewer-toolbar,.cesium-viewer-animationContainer,.cesium-viewer-timelineContainer,.cesium-viewer-bottom{display:none!important}
+.top{position:fixed;top:calc(env(safe-area-inset-top) + 10px);left:12px;right:12px;display:flex;gap:8px;z-index:20;pointer-events:none}.brand,.pill{pointer-events:auto;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);background:var(--glass);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.28)}.brand{padding:10px 12px;min-width:0;flex:1}.brand b{font-size:14px;letter-spacing:.08em}.brand small{display:block;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pill{width:44px;height:44px;display:grid;place-items:center;border-radius:50%;color:var(--text);font-size:20px;cursor:pointer}
+.dock{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom) + 8px);z-index:20;display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:6px;border-radius:22px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}.btn{border:0;min-height:54px;border-radius:14px;color:var(--text);background:rgba(255,255,255,.075);font-weight:700;font-size:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:4px 2px}.btn span{font-size:20px;line-height:1}.btn.active{background:rgba(130,255,226,.16);outline:1px solid rgba(130,255,226,.35)}
+.sheetWrap{position:fixed;inset:0;z-index:40;display:none;align-items:flex-end;background:rgba(0,0,0,.38)}.sheetWrap.show{display:flex}.sheet{width:100%;max-height:88vh;overflow:auto;padding:14px 16px calc(env(safe-area-inset-bottom) + 18px);border-radius:26px 26px 0 0;background:#0a0f18;border-top:1px solid var(--line)}.handle{width:44px;height:5px;margin:0 auto 12px;border-radius:10px;background:rgba(255,255,255,.25)}h2{margin:4px 0 6px;font-size:22px}p{color:var(--muted);line-height:1.4;margin:6px 0 16px}label{font-size:12px;color:var(--muted);display:block;margin:12px 0 6px}input{width:100%;border:1px solid var(--line);background:#111925;color:var(--text);padding:13px 14px;border-radius:14px;font-size:16px;outline:none}.row{display:flex;gap:8px;margin-top:10px}.action{flex:1;border:0;border-radius:14px;padding:13px 14px;font-weight:800;background:var(--accent);color:#05110e;font-size:14px}.secondary{background:#172231;color:var(--text)}.danger{background:#27161a;color:#ffadb6}.mini{font-size:12px;color:var(--muted)}.toggleline{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07)}.toggleline button{border:0;border-radius:999px;padding:8px 11px;background:#172231;color:var(--text);font-weight:700}
+.status{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 82px);z-index:25;max-width:90%;padding:9px 12px;border-radius:999px;background:rgba(5,8,13,.86);border:1px solid var(--line);color:#eaf3ff;font-size:12px;opacity:0;transition:.2s;pointer-events:none;text-align:center}.status.show{opacity:1}.crosshair{position:fixed;left:50%;top:50%;width:22px;height:22px;transform:translate(-50%,-50%);z-index:10;opacity:.72;pointer-events:none}.crosshair:before,.crosshair:after{content:"";position:absolute;background:rgba(255,255,255,.78)}.crosshair:before{left:10px;top:0;width:1px;height:22px}.crosshair:after{top:10px;left:0;height:1px;width:22px}.voiceListening{background:rgba(255,80,110,.22)!important;outline:1px solid rgba(255,120,140,.55)}
+#cameraCard{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 84px);z-index:30;background:rgba(7,11,18,.94);border:1px solid var(--line);border-radius:18px;padding:10px;display:none;box-shadow:0 18px 48px rgba(0,0,0,.45)}#cameraCard.show{display:block}#cameraCard img{width:100%;max-height:190px;object-fit:cover;border-radius:12px;background:#000}#cameraCard .camTitle{font-weight:800;margin:8px 2px 2px}#cameraCard .camView{font-size:12px;color:var(--muted);margin:0 2px 8px}.closeCam{position:absolute;right:18px;top:16px;border:0;border-radius:999px;width:30px;height:30px;background:rgba(0,0,0,.55);color:#fff;font-size:18px}
+</style>
 </head>
 <body>
-  <div id="cesiumContainer"></div>
-  <div class="crosshair"></div>
+<div id="cesiumContainer"></div><div class="crosshair"></div>
+<div class="top"><div class="brand"><b>GOD'S EYE</b><small id="subline">3D globe ready</small></div><button class="pill" id="voiceBtn">🎙️</button><button class="pill" id="settingsBtn">⚙︎</button></div>
+<div class="dock">
+<button class="btn" id="homeBtn"><span>🌍</span>WORLD</button>
+<button class="btn" id="locateBtn"><span>◎</span>ME</button>
+<button class="btn" id="searchBtn"><span>⌕</span>SEARCH</button>
+<button class="btn" id="photoBtn"><span>▦</span>3D</button>
+<button class="btn" id="streetViewBtn"><span>👁</span>STREET</button>
+<button class="btn" id="cctvBtn"><span>📹</span>CCTV</button>
+</div>
+<div class="status" id="status"></div>
+<div id="cameraCard"><button class="closeCam" id="closeCam">×</button><img id="cameraImage" alt="Traffic camera"><div class="camTitle" id="cameraTitle"></div><div class="camView" id="cameraViewText"></div><div class="row"><button class="action secondary" id="refreshCam">Refresh</button><button class="action" id="openCamSource">Open source</button></div></div>
 
-  <div class="top">
-    <div class="brand">
-      <b>GOD'S EYE</b>
-      <small id="subline">3D globe ready</small>
-    </div>
-    <button class="pill" id="voiceBtn" aria-label="Voice control">🎙️</button>
-    <button class="pill" id="settingsBtn" aria-label="Settings">⚙︎</button>
-  </div>
+<div class="sheetWrap" id="searchSheet"><div class="sheet"><div class="handle"></div><h2>Fly somewhere</h2><p>Search a city, landmark or address.</p><input id="searchInput" placeholder="e.g. Orange NSW"><div class="row"><button class="action secondary" data-close="searchSheet">Cancel</button><button class="action" id="goSearch">Fly there</button></div></div></div>
 
-  <div class="dock">
-    <button class="btn" id="homeBtn"><span>🌍</span>WORLD</button>
-    <button class="btn" id="locateBtn"><span>◎</span>ME</button>
-    <button class="btn" id="searchBtn"><span>⌕</span>SEARCH</button>
-    <button class="btn" id="photoBtn"><span>▦</span>3D CITY</button>
-    <button class="btn" id="cctvBtn"><span>📹</span>CCTV</button>
-  </div>
+<div class="sheetWrap" id="cctvSheet"><div class="sheet"><div class="handle"></div><h2>Camera layer</h2><p>Public traffic cameras appear as 📹 markers on the globe. On iPhone, tap a marker to see its latest snapshot. With a mouse or trackpad, hovering previews it.</p><div class="toggleline"><div><b>NSW Live Traffic cameras</b><div class="mini" id="camCount">Not loaded yet</div></div><button id="reloadCameras">Reload</button></div><div class="toggleline"><div><b>Official Live Traffic NSW</b><div class="mini">Open the official map if the public dataset blocks browser access</div></div><button id="openLiveTraffic">Open</button></div><p class="mini">God's Eye only shows public camera data or cameras you are authorised to access. It does not search for exposed private cameras or bypass logins.</p><div class="row"><button class="action secondary" data-close="cctvSheet">Done</button></div></div></div>
 
-  <div class="status" id="status"></div>
-
-  <div class="sheetWrap" id="searchSheet">
-    <div class="sheet">
-      <div class="handle"></div>
-      <h2>Fly somewhere</h2>
-      <p>Search a city, landmark or address using Cesium ion's geocoder.</p>
-      <label for="searchInput">Place</label>
-      <input id="searchInput" placeholder="e.g. Sydney Opera House" />
-      <div class="row">
-        <button class="action secondary" data-close="searchSheet">Cancel</button>
-        <button class="action" id="goSearch">Fly there</button>
-      </div>
-    </div>
-  </div>
-
-
-  <div class="sheetWrap" id="cctvSheet">
-    <div class="sheet">
-      <div class="handle"></div>
-      <h2>CCTV viewer</h2>
-      <p>View a camera you own, are authorised to access, or a public webcam. On iPhone, HLS streams ending in <b>.m3u8</b> work best. RTSP links need to be converted to HLS or WebRTC first.</p>
-      <div class="toggleline" id="orangePresetBlock">
-          <div><b>Orange NSW public camera</b><div class="mini">Current public live-snapshot source</div></div>
-          <button id="orangePublicCam">Open</button>
-        </div>
-        <div class="toggleline">
-          <div><b>Live Traffic NSW cameras</b><div class="mini">Official NSW camera map and snapshots</div></div>
-          <button id="orangeLiveTraffic">Open</button>
-        </div>
-        <p class="mini">Orange's currently verified public camera is a periodically refreshed still image, not a continuous video stream. Mobile speed-camera locations are not watchable CCTV feeds.</p>
-      <label for="cameraUrl">Camera stream URL</label>
-      <input id="cameraUrl" inputmode="url" autocomplete="off" placeholder="https://example.com/live/stream.m3u8" />
-      <div class="row">
-        <button class="action secondary" id="stopCamera">Stop</button>
-        <button class="action" id="loadCamera">View camera</button>
-      </div>
-      <div class="cameraView">
-        <video id="cameraVideo" controls playsinline webkit-playsinline></video>
-      </div>
-      <p class="mini">God's Eye does not bypass camera passwords or discover private cameras. Use only feeds you are permitted to view.</p>
-      <div class="row">
-        <button class="action secondary" data-close="cctvSheet">Done</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="sheetWrap" id="settingsSheet">
-    <div class="sheet">
-      <div class="handle"></div>
-      <h2>Power Up</h2>
-      <p>Your Cesium ion token stays in this browser on this iPhone.</p>
-
-      <label for="tokenInput">Cesium ion access token</label>
-      <input id="tokenInput" type="password" autocomplete="off" placeholder="Paste token here" />
-      <div class="row">
-        <button class="action secondary" id="showToken">Show</button>
-        <button class="action" id="saveToken">Save token</button>
-      </div>
-
-      <div style="margin-top:18px">
-        <div class="toggleline">
-          <div><b>Photorealistic 3D</b><div class="mini">Google 3D Tiles via Cesium</div></div>
-          <button id="toggle3d">Load</button>
-        </div>
-        <div class="toggleline">
-          <div><b>Home screen mode</b><div class="mini">Safari → Share → Add to Home Screen</div></div>
-          <button id="installHelp">How</button>
-        </div>
-      </div>
-
-      <div class="row">
-        <button class="action danger" id="clearToken">Clear token</button>
-        <button class="action secondary" data-close="settingsSheet">Done</button>
-      </div>
-    </div>
-  </div>
+<div class="sheetWrap" id="settingsSheet"><div class="sheet"><div class="handle"></div><h2>Power Up</h2><p>Your keys stay in this browser on this iPhone.</p><label>Cesium ion access token</label><input id="tokenInput" type="password" autocomplete="off" placeholder="Paste token here"><div class="row"><button class="action secondary" id="showToken">Show</button><button class="action" id="saveToken">Save token</button></div><div style="margin-top:16px"><div class="toggleline"><div><b>Street names</b><div class="mini">OpenStreetMap road and street labels over the globe</div></div><button id="toggleStreets">On</button></div><div class="toggleline"><div><b>Photorealistic 3D</b><div class="mini">Google 3D Tiles via Cesium</div></div><button id="toggle3d">Load</button></div></div><div class="row"><button class="action danger" id="clearToken">Clear token</button><button class="action secondary" data-close="settingsSheet">Done</button></div></div></div>
 
 <script>
-let viewer;
-let photoTileset = null;
-let photoEnabled = false;
-
-const statusEl = document.getElementById("status");
-const subline = document.getElementById("subline");
-
-function toast(msg, ms=2400) {
-  statusEl.textContent = msg;
-  statusEl.classList.add("show");
-  clearTimeout(window.__toastTimer);
-  window.__toastTimer = setTimeout(()=>statusEl.classList.remove("show"), ms);
-}
-
-function openSheet(id) { document.getElementById(id).classList.add("show"); }
-function closeSheet(id) { document.getElementById(id).classList.remove("show"); }
-
-document.querySelectorAll("[data-close]").forEach(b => b.onclick = () => closeSheet(b.dataset.close));
-document.querySelectorAll(".sheetWrap").forEach(w => w.addEventListener("click", e => { if(e.target===w) closeSheet(w.id); }));
-
-function getToken() { return localStorage.getItem("godseye_cesium_token") || ""; }
-
-function applyToken() {
-  const token = getToken();
-  if (token) Cesium.Ion.defaultAccessToken = token;
-  return !!token;
-}
-
-function createViewer() {
-  applyToken();
-  viewer = new Cesium.Viewer("cesiumContainer", {
-    animation:false,
-    timeline:false,
-    baseLayerPicker:false,
-    homeButton:false,
-    sceneModePicker:false,
-    navigationHelpButton:false,
-    geocoder:false,
-    infoBox:false,
-    selectionIndicator:false,
-    fullscreenButton:false,
-    shouldAnimate:true
-  });
-
-  viewer.scene.globe.enableLighting = true;
-  viewer.scene.fog.enabled = true;
-  viewer.scene.skyAtmosphere.show = true;
-  viewer.scene.requestRenderMode = true;
-  viewer.scene.maximumRenderTimeChange = Infinity;
-  viewer.camera.setView({
-    destination: Cesium.Cartesian3.fromDegrees(10, 15, 19000000)
-  });
-  viewer.scene.requestRender();
-}
-
-async function enablePhoto3D() {
-  if (!getToken()) {
-    openSheet("settingsSheet");
-    toast("Add your Cesium ion token first");
-    return;
-  }
-  applyToken();
-  try {
-    toast("Loading photorealistic 3D…", 4000);
-    if (!photoTileset) {
-      photoTileset = await Cesium.createGooglePhotorealistic3DTileset({
-        onlyUsingWithGoogleGeocoder: true
-      });
-      viewer.scene.primitives.add(photoTileset);
-    }
-    photoTileset.show = true;
-    photoEnabled = true;
-    document.getElementById("photoBtn").classList.add("active");
-    document.getElementById("toggle3d").textContent = "On";
-    subline.textContent = "Photorealistic 3D active";
-    viewer.scene.requestRender();
-    toast("3D Cities enabled");
-  } catch (e) {
-    console.error(e);
-    toast("Couldn’t load 3D tiles. Check token permissions.");
-  }
-}
-
-function disablePhoto3D() {
-  if (photoTileset) photoTileset.show = false;
-  photoEnabled = false;
-  document.getElementById("photoBtn").classList.remove("active");
-  document.getElementById("toggle3d").textContent = "Load";
-  subline.textContent = "3D globe ready";
-  viewer.scene.requestRender();
-  toast("3D Cities off");
-}
-
-document.getElementById("homeBtn").onclick = () => {
-  viewer.camera.flyTo({destination: Cesium.Cartesian3.fromDegrees(10,15,19000000), duration:1.6});
-};
-
-document.getElementById("locateBtn").onclick = () => {
-  if (!navigator.geolocation) return toast("Location isn’t available in this browser");
-  toast("Finding you…");
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      const {longitude, latitude} = pos.coords;
-      viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, 5000),
-        duration:2.0,
-        orientation:{heading:0, pitch:Cesium.Math.toRadians(-55), roll:0}
-      });
-      subline.textContent = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-      toast("Flying to your location");
-    },
-    err => toast("Location permission was not granted"),
-    {enableHighAccuracy:true, timeout:10000}
-  );
-};
-
-document.getElementById("searchBtn").onclick = () => {
-  openSheet("searchSheet");
-  setTimeout(()=>document.getElementById("searchInput").focus(), 150);
-};
-
-document.getElementById("goSearch").onclick = async () => {
-  const q = document.getElementById("searchInput").value.trim();
-  if (!q) return;
-  if (!getToken()) {
-    closeSheet("searchSheet");
-    openSheet("settingsSheet");
-    return toast("Add your Cesium ion token to search");
-  }
-  try {
-    applyToken();
-    toast("Searching…");
-    const provider = await Cesium.IonGeocodeProviderType.GOOGLE;
-    // Use Cesium ion REST geocoder directly to keep the mobile UI custom.
-    const url = `https://api.cesium.com/v1/geocode/search?text=${encodeURIComponent(q)}&access_token=${encodeURIComponent(getToken())}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Search failed");
-    const data = await res.json();
-    const f = data.features && data.features[0];
-    if (!f) return toast("No result found");
-    const c = f.geometry.coordinates;
-    closeSheet("searchSheet");
-    viewer.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(c[0], c[1], 1800),
-      duration:2.2,
-      orientation:{heading:0, pitch:Cesium.Math.toRadians(-50), roll:0}
-    });
-    subline.textContent = f.properties?.label || q;
-    toast("Flying there");
-  } catch(e) {
-    console.error(e);
-    toast("Search failed. Check token/geocode permission.");
-  }
-};
-
-document.getElementById("photoBtn").onclick = () => photoEnabled ? disablePhoto3D() : enablePhoto3D();
-
-
-// CCTV viewer: authorised/private-owner/public feeds only.
-const cameraVideo = document.getElementById("cameraVideo");
-document.getElementById("cctvBtn").onclick = () => openSheet("cctvSheet");
-document.getElementById("loadCamera").onclick = async () => {
-  const url = document.getElementById("cameraUrl").value.trim();
-  if (!url) return toast("Paste a camera stream URL first");
-  if (!/^https:\/\//i.test(url)) return toast("Use an HTTPS camera stream URL");
-  try {
-    cameraVideo.pause();
-    cameraVideo.removeAttribute("src");
-    cameraVideo.load();
-    cameraVideo.src = url;
-    await cameraVideo.play();
-    toast("Camera stream opened");
-  } catch (e) {
-    console.error(e);
-    toast("Couldn't play that feed. HLS .m3u8 works best on iPhone.");
-  }
-};
-document.getElementById("stopCamera").onclick = () => {
-  cameraVideo.pause();
-  cameraVideo.removeAttribute("src");
-  cameraVideo.load();
-  toast("Camera stopped");
-};
-
-// Push-to-talk voice control.
-let recognition = null;
-let voiceActive = false;
-let voiceBuffer = "";
-let voiceHandled = false;
-const voiceBtn = document.getElementById("voiceBtn");
-
-function voiceZoomIn() {
-  const h = viewer.camera.positionCartographic.height;
-  viewer.camera.zoomIn(Math.max(100, h * 0.35));
-  viewer.scene.requestRender();
-}
-
-function voiceZoomOut() {
-  const h = viewer.camera.positionCartographic.height;
-  viewer.camera.zoomOut(Math.max(100, h * 0.7));
-  viewer.scene.requestRender();
-}
-
-async function handleVoiceCommand(raw) {
-  const original = (raw || "").trim();
-  const text = original.toLowerCase().replace(/[.,!?]/g, "").replace(/\s+/g, " ").trim();
-  if (!text) return false;
-  voiceHandled = true;
-  subline.textContent = `Heard: ${original}`;
-  toast(`Heard: “${original}”`, 1800);
-
-  if (/^(home|go home|world|world view|show (me )?the world|zoom out to world)$/.test(text)) {
-    document.getElementById("homeBtn").click();
-    toast("World view");
-    return true;
-  }
-  if (/(my location|show my location|where am i|find me|locate me|go to my location)/.test(text)) {
-    document.getElementById("locateBtn").click();
-    return true;
-  }
-  if (/(open|show|view).*(cctv|camera|cameras)|^(cctv|cameras)$/.test(text)) {
-    openSheet("cctvSheet");
-    toast("CCTV opened");
-    return true;
-  }
-  if (/(turn on|enable|show|load).*(3d|three d)|^(3d|three d|3d city|3d cities)$/.test(text)) {
-    await enablePhoto3D();
-    return true;
-  }
-  if (/(turn off|disable|hide).*(3d|three d)/.test(text)) {
-    disablePhoto3D();
-    return true;
-  }
-  if (/zoom (right )?in|closer|get closer/.test(text)) {
-    voiceZoomIn();
-    toast("Zooming in");
-    return true;
-  }
-  if (/zoom (right )?out|further|farther|get back/.test(text)) {
-    voiceZoomOut();
-    toast("Zooming out");
-    return true;
-  }
-  if (/(open|show).*(settings|power up)/.test(text)) {
-    document.getElementById("settingsBtn").click();
-    return true;
-  }
-  if (/^(search|open search)$/.test(text)) {
-    document.getElementById("searchBtn").click();
-    return true;
-  }
-
-  const match = text.match(/^(?:please )?(?:take me to|go to|fly to|search for|find|show me)\s+(.+)$/i);
-  if (match && match[1]) {
-    const place = original.replace(/^(?:please )?(?:take me to|go to|fly to|search for|find|show me)\s+/i, "").trim();
-    if (place) {
-      document.getElementById("searchInput").value = place;
-      document.getElementById("goSearch").click();
-      return true;
-    }
-  }
-
-  if (text.split(/\s+/).length <= 7) {
-    document.getElementById("searchInput").value = original;
-    document.getElementById("goSearch").click();
-    return true;
-  }
-
-  toast("Try: ‘Go to Orange NSW’, ‘Open CCTV’, ‘Zoom in’, ‘My location’, or ‘World view’.", 4200);
-  return false;
-}
-
-function makeRecognition() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return null;
-  const r = new SR();
-  r.lang = "en-AU";
-  r.interimResults = true;
-  r.maxAlternatives = 3;
-  r.continuous = false;
-
-  r.onstart = () => {
-    voiceActive = true;
-    voiceBuffer = "";
-    voiceHandled = false;
-    voiceBtn.classList.add("voiceListening");
-    voiceBtn.textContent = "⏹";
-    subline.textContent = "Listening…";
-    toast("Listening… say a command");
-  };
-
-  r.onspeechstart = () => {
-    subline.textContent = "Hearing you…";
-  };
-
-  r.onresult = e => {
-    let combined = "";
-    let hasFinal = false;
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const t = e.results[i][0]?.transcript || "";
-      combined += (combined ? " " : "") + t;
-      if (e.results[i].isFinal) hasFinal = true;
-    }
-    if (combined.trim()) {
-      voiceBuffer = combined.trim();
-      subline.textContent = `Hearing: ${voiceBuffer}`;
-    }
-    if (hasFinal && voiceBuffer && !voiceHandled) {
-      handleVoiceCommand(voiceBuffer);
-    }
-  };
-
-  r.onspeechend = () => {
-    try { r.stop(); } catch (_) {}
-  };
-
-  r.onend = () => {
-    voiceActive = false;
-    voiceBtn.classList.remove("voiceListening");
-    voiceBtn.textContent = "🎙️";
-    if (voiceBuffer && !voiceHandled) {
-      handleVoiceCommand(voiceBuffer);
-    } else if (!voiceBuffer && !voiceHandled) {
-      subline.textContent = "No speech detected";
-      toast("I didn't catch that. Tap the mic and speak after ‘Listening…’", 3500);
-    }
-  };
-
-  r.onnomatch = () => {
-    toast("I heard speech but couldn't recognise the command.");
-  };
-
-  r.onerror = e => {
-    console.error(e);
-    if (e.error === "no-speech") toast("No speech detected. Try again and speak clearly.");
-    else if (e.error === "audio-capture") toast("Microphone audio isn't reaching Safari.");
-    else if (e.error === "not-allowed" || e.error === "service-not-allowed") toast("Allow microphone and speech recognition for this site.");
-    else if (e.error !== "aborted") toast(`Voice error: ${e.error || "not available"}`);
-  };
-  return r;
-}
-
-voiceBtn.onclick = async () => {
-  if (voiceActive && recognition) {
-    recognition.stop();
-    return;
-  }
-  try {
-    if (navigator.mediaDevices?.getUserMedia) {
-      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-      stream.getTracks().forEach(t => t.stop());
-    }
-  } catch (e) {
-    console.error(e);
-    toast("Microphone permission is required for voice control.");
-    return;
-  }
-
-  recognition = makeRecognition();
-  if (!recognition) {
-    toast("Speech recognition isn't available in this iPhone browser.");
-    return;
-  }
-  try { recognition.start(); }
-  catch (e) { console.error(e); toast("Couldn't start voice control."); }
-};
-
-document.getElementById("settingsBtn").onclick = () => {
-  document.getElementById("tokenInput").value = getToken();
-  openSheet("settingsSheet");
-};
-
-document.getElementById("saveToken").onclick = () => {
-  const token = document.getElementById("tokenInput").value.trim();
-  if (!token) return toast("Paste a token first");
-  localStorage.setItem("godseye_cesium_token", token);
-  applyToken();
-  toast("Token saved on this iPhone");
-};
-
-document.getElementById("clearToken").onclick = () => {
-  localStorage.removeItem("godseye_cesium_token");
-  document.getElementById("tokenInput").value = "";
-  disablePhoto3D();
-  toast("Token cleared");
-};
-
-document.getElementById("showToken").onclick = () => {
-  const i = document.getElementById("tokenInput");
-  const showing = i.type === "text";
-  i.type = showing ? "password" : "text";
-  document.getElementById("showToken").textContent = showing ? "Show" : "Hide";
-};
-
-document.getElementById("toggle3d").onclick = () => photoEnabled ? disablePhoto3D() : enablePhoto3D();
-document.getElementById("installHelp").onclick = () => {
-  toast("In Safari: Share ↑ → Add to Home Screen");
-};
-
-createViewer();
-
-if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
-  navigator.serviceWorker.register("./sw.js").catch(()=>{});
-}
+let viewer,photoTileset=null,photoEnabled=false,streetLayer=null,streetsEnabled=true;
+let cameraEntities=[];let selectedCamera=null;let cameraDataLoaded=false;
+const statusEl=document.getElementById('status'),subline=document.getElementById('subline');
+const CAMERA_DATA_URL='https://opendata.transport.nsw.gov.au/data/dataset/b0212311-b0da-4363-8dc3-825fe10941b2/resource/cc776d1a-d96c-4ae4-a465-c380a53717c9/download/livetrafficcamera.json';
+function toast(msg,ms=2600){statusEl.textContent=msg;statusEl.classList.add('show');clearTimeout(window.__t);window.__t=setTimeout(()=>statusEl.classList.remove('show'),ms)}
+function openSheet(id){document.getElementById(id).classList.add('show')}function closeSheet(id){document.getElementById(id).classList.remove('show')}
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>closeSheet(b.dataset.close));document.querySelectorAll('.sheetWrap').forEach(w=>w.addEventListener('click',e=>{if(e.target===w)closeSheet(w.id)}));
+function getToken(){return localStorage.getItem('godseye_cesium_token')||''}function applyToken(){const t=getToken();if(t)Cesium.Ion.defaultAccessToken=t;return!!t}
+function createViewer(){applyToken();viewer=new Cesium.Viewer('cesiumContainer',{animation:false,timeline:false,baseLayerPicker:false,homeButton:false,sceneModePicker:false,navigationHelpButton:false,geocoder:false,infoBox:false,selectionIndicator:false,fullscreenButton:false,shouldAnimate:true});viewer.scene.globe.enableLighting=true;viewer.scene.fog.enabled=true;viewer.scene.skyAtmosphere.show=true;viewer.scene.requestRenderMode=true;viewer.scene.maximumRenderTimeChange=Infinity;viewer.camera.setView({destination:Cesium.Cartesian3.fromDegrees(10,15,19000000)});enableStreetLayer();installCameraPicking();viewer.scene.requestRender()}
+function enableStreetLayer(){if(streetLayer){streetLayer.show=true;streetsEnabled=true;document.getElementById('toggleStreets').textContent='On';return}try{const p=new Cesium.OpenStreetMapImageryProvider({url:'https://tile.openstreetmap.org/',credit:'© OpenStreetMap contributors'});streetLayer=viewer.imageryLayers.addImageryProvider(p);streetLayer.alpha=.58;streetLayer.brightness=.9;streetsEnabled=true;document.getElementById('toggleStreets').textContent='On'}catch(e){console.error(e);toast('Street labels could not load')}}
+function toggleStreets(){if(!streetLayer)return enableStreetLayer();streetsEnabled=!streetsEnabled;streetLayer.show=streetsEnabled;document.getElementById('toggleStreets').textContent=streetsEnabled?'On':'Off';viewer.scene.requestRender();toast(streetsEnabled?'Street names on':'Street names off')}
+async function enablePhoto3D(){if(!getToken()){openSheet('settingsSheet');return toast('Add your Cesium ion token first')}applyToken();try{toast('Loading photorealistic 3D…',4000);if(!photoTileset){photoTileset=await Cesium.createGooglePhotorealistic3DTileset({onlyUsingWithGoogleGeocoder:true});viewer.scene.primitives.add(photoTileset)}photoTileset.show=true;photoEnabled=true;document.getElementById('photoBtn').classList.add('active');document.getElementById('toggle3d').textContent='On';viewer.scene.requestRender();toast('3D Cities enabled')}catch(e){console.error(e);toast('Couldn’t load 3D tiles. Check token permissions.')}}
+function disablePhoto3D(){if(photoTileset)photoTileset.show=false;photoEnabled=false;document.getElementById('photoBtn').classList.remove('active');document.getElementById('toggle3d').textContent='Load';viewer.scene.requestRender();toast('3D Cities off')}
+function centerLatLon(){const canvas=viewer.scene.canvas;const pt=new Cesium.Cartesian2(canvas.clientWidth/2,canvas.clientHeight/2);let cart;if(viewer.scene.pickPositionSupported){try{cart=viewer.scene.pickPosition(pt)}catch(_){}}if(!Cesium.defined(cart)){const ray=viewer.camera.getPickRay(pt);cart=viewer.scene.globe.pick(ray,viewer.scene)}if(!Cesium.defined(cart))cart=viewer.camera.pickEllipsoid(pt,viewer.scene.globe.ellipsoid);if(!Cesium.defined(cart))return null;const c=Cesium.Cartographic.fromCartesian(cart);return{lat:Cesium.Math.toDegrees(c.latitude),lon:Cesium.Math.toDegrees(c.longitude)}}
+function openStreetView(){const p=centerLatLon();if(!p)return toast('Zoom closer to the ground first');const url=`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${encodeURIComponent(p.lat+','+p.lon)}`;window.open(url,'_blank','noopener,noreferrer');toast('Opening Street View at the crosshair')}
+function camProps(entity){return entity?.properties?._raw||null}
+function showCamera(entity){const p=camProps(entity);if(!p)return;selectedCamera=p;document.getElementById('cameraTitle').textContent=p.title||'Traffic camera';document.getElementById('cameraViewText').textContent=p.view||p.region||'';const img=document.getElementById('cameraImage');img.src=(p.href||p.image||'')+((p.href||p.image||'').includes('?')?'&':'?')+'t='+Date.now();document.getElementById('cameraCard').classList.add('show')}
+function hideCamera(){document.getElementById('cameraCard').classList.remove('show');selectedCamera=null}
+function clearCameras(){cameraEntities.forEach(e=>viewer.entities.remove(e));cameraEntities=[];cameraDataLoaded=false;document.getElementById('camCount').textContent='Not loaded yet'}
+function addCameraFeature(f){if(!f?.geometry?.coordinates)return;const [lon,lat]=f.geometry.coordinates;const p=f.properties||{};if(!Number.isFinite(Number(lat))||!Number.isFinite(Number(lon)))return;const e=viewer.entities.add({position:Cesium.Cartesian3.fromDegrees(Number(lon),Number(lat),12),label:{text:'📹',font:'22px -apple-system',showBackground:true,backgroundColor:Cesium.Color.fromCssColorString('rgba(5,8,13,.78)'),pixelOffset:new Cesium.Cartesian2(0,-8),disableDepthTestDistance:Number.POSITIVE_INFINITY,distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0,2500000)},properties:{_raw:p}});cameraEntities.push(e)}
+async function loadPublicCameras(){clearCameras();document.getElementById('camCount').textContent='Loading…';toast('Loading public camera positions…',3500);try{const r=await fetch(CAMERA_DATA_URL,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const data=await r.json();(data.features||[]).forEach(addCameraFeature);cameraDataLoaded=true;document.getElementById('camCount').textContent=`${cameraEntities.length} public cameras on map`;viewer.scene.requestRender();toast(`${cameraEntities.length} public cameras loaded`)}catch(e){console.error(e);document.getElementById('camCount').textContent='Browser blocked the public dataset';toast('NSW camera data was blocked by the source. Use “Open” for the official Live Traffic map.',5200)}}
+function installCameraPicking(){const h=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);h.setInputAction(m=>{const picked=viewer.scene.pick(m.position);if(picked?.id&&camProps(picked.id))showCamera(picked.id)},Cesium.ScreenSpaceEventType.LEFT_CLICK);h.setInputAction(m=>{const picked=viewer.scene.pick(m.endPosition);document.body.style.cursor=picked?.id&&camProps(picked.id)?'pointer':'';if(picked?.id&&camProps(picked.id)&&matchMedia('(hover:hover)').matches)showCamera(picked.id)},Cesium.ScreenSpaceEventType.MOUSE_MOVE)}
+async function searchPlace(q){q=(q||'').trim();if(!q)return;if(!getToken()){openSheet('settingsSheet');return toast('Add your Cesium ion token to search')}try{applyToken();toast('Searching…');const url=`https://api.cesium.com/v1/geocode/search?text=${encodeURIComponent(q)}&access_token=${encodeURIComponent(getToken())}`;const r=await fetch(url);if(!r.ok)throw new Error('Search failed');const d=await r.json(),f=d.features?.[0];if(!f)return toast('No result found');const c=f.geometry.coordinates;closeSheet('searchSheet');viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(c[0],c[1],1800),duration:2.2,orientation:{heading:0,pitch:Cesium.Math.toRadians(-50),roll:0}});subline.textContent=f.properties?.label||q;toast('Flying there')}catch(e){console.error(e);toast('Search failed. Check token/geocode permission.')}}
+document.getElementById('homeBtn').onclick=()=>viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(10,15,19000000),duration:1.6});document.getElementById('locateBtn').onclick=()=>{if(!navigator.geolocation)return toast('Location isn’t available');toast('Finding you…');navigator.geolocation.getCurrentPosition(pos=>{const{longitude,latitude}=pos.coords;viewer.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(longitude,latitude,5000),duration:2,orientation:{heading:0,pitch:Cesium.Math.toRadians(-55),roll:0}});subline.textContent=`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;toast('Flying to your location')},()=>toast('Location permission was not granted'),{enableHighAccuracy:true,timeout:10000})};document.getElementById('searchBtn').onclick=()=>{openSheet('searchSheet');setTimeout(()=>document.getElementById('searchInput').focus(),150)};document.getElementById('goSearch').onclick=()=>searchPlace(document.getElementById('searchInput').value);document.getElementById('photoBtn').onclick=()=>photoEnabled?disablePhoto3D():enablePhoto3D();document.getElementById('streetViewBtn').onclick=openStreetView;document.getElementById('cctvBtn').onclick=()=>{openSheet('cctvSheet');if(!cameraDataLoaded&&cameraEntities.length===0)loadPublicCameras()};document.getElementById('reloadCameras').onclick=loadPublicCameras;document.getElementById('openLiveTraffic').onclick=()=>window.open('https://www.livetraffic.com/','_blank','noopener,noreferrer');document.getElementById('closeCam').onclick=hideCamera;document.getElementById('refreshCam').onclick=()=>{if(selectedCamera){const u=selectedCamera.href||selectedCamera.image||'';document.getElementById('cameraImage').src=u+(u.includes('?')?'&':'?')+'t='+Date.now()}};document.getElementById('openCamSource').onclick=()=>{if(selectedCamera?.href)window.open(selectedCamera.href,'_blank','noopener,noreferrer');else window.open('https://www.livetraffic.com/','_blank','noopener,noreferrer')};
+let recognition=null,voiceActive=false,voiceBuffer='',voiceHandled=false;const voiceBtn=document.getElementById('voiceBtn');function zoomIn(){const h=viewer.camera.positionCartographic.height;viewer.camera.zoomIn(Math.max(100,h*.35));viewer.scene.requestRender()}function zoomOut(){const h=viewer.camera.positionCartographic.height;viewer.camera.zoomOut(Math.max(100,h*.7));viewer.scene.requestRender()}
+async function handleVoiceCommand(raw){const original=(raw||'').trim(),text=original.toLowerCase().replace(/[.,!?]/g,'').replace(/\s+/g,' ').trim();if(!text)return false;voiceHandled=true;subline.textContent=`Heard: ${original}`;if(/^(home|go home|world|world view|show (me )?the world)$/.test(text)){document.getElementById('homeBtn').click();return true}if(/(my location|show my location|where am i|find me|locate me)/.test(text)){document.getElementById('locateBtn').click();return true}if(/(street view|look at street|show street view)/.test(text)){openStreetView();return true}if(/(open|show|view).*(cctv|camera|cameras)|^(cctv|cameras)$/.test(text)){openSheet('cctvSheet');loadPublicCameras();return true}if(/(turn on|enable|show|load).*(3d|three d)/.test(text)){await enablePhoto3D();return true}if(/(turn off|disable|hide).*(3d|three d)/.test(text)){disablePhoto3D();return true}if(/street names on|show street names|show roads/.test(text)){if(!streetsEnabled)toggleStreets();return true}if(/street names off|hide street names|hide roads/.test(text)){if(streetsEnabled)toggleStreets();return true}if(/zoom (right )?in|closer|get closer/.test(text)){zoomIn();return true}if(/zoom (right )?out|further|farther|get back/.test(text)){zoomOut();return true}const m=text.match(/^(?:please )?(?:take me to|go to|fly to|search for|find|show me)\s+(.+)$/i);if(m?.[1]){await searchPlace(original.replace(/^(?:please )?(?:take me to|go to|fly to|search for|find|show me)\s+/i,''));return true}if(text.split(/\s+/).length<=7){await searchPlace(original);return true}toast('Try “Go to Orange NSW”, “Street View”, “Open cameras”, or “Show street names”.',4200);return false}
+function makeRecognition(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return null;const r=new SR();r.lang='en-AU';r.interimResults=true;r.maxAlternatives=3;r.continuous=false;r.onstart=()=>{voiceActive=true;voiceBuffer='';voiceHandled=false;voiceBtn.classList.add('voiceListening');voiceBtn.textContent='⏹';subline.textContent='Listening…';toast('Listening… say a command')};r.onresult=e=>{let combined='',final=false;for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0]?.transcript||'';combined+=(combined?' ':'')+t;if(e.results[i].isFinal)final=true}if(combined.trim()){voiceBuffer=combined.trim();subline.textContent=`Hearing: ${voiceBuffer}`}if(final&&voiceBuffer&&!voiceHandled)handleVoiceCommand(voiceBuffer)};r.onspeechend=()=>{try{r.stop()}catch(_){}};r.onend=()=>{voiceActive=false;voiceBtn.classList.remove('voiceListening');voiceBtn.textContent='🎙️';if(voiceBuffer&&!voiceHandled)handleVoiceCommand(voiceBuffer);else if(!voiceBuffer&&!voiceHandled)toast("I didn't catch that. Try again.")};r.onerror=e=>{console.error(e);if(e.error!=='aborted')toast(`Voice error: ${e.error||'not available'}`)};return r}
+voiceBtn.onclick=async()=>{if(voiceActive&&recognition){recognition.stop();return}try{if(navigator.mediaDevices?.getUserMedia){const s=await navigator.mediaDevices.getUserMedia({audio:true});s.getTracks().forEach(t=>t.stop())}}catch(e){return toast('Microphone permission is required')}recognition=makeRecognition();if(!recognition)return toast('Speech recognition is not available here');try{recognition.start()}catch(e){toast('Couldn’t start voice control')}};
+document.getElementById('settingsBtn').onclick=()=>{document.getElementById('tokenInput').value=getToken();openSheet('settingsSheet')};document.getElementById('saveToken').onclick=()=>{const t=document.getElementById('tokenInput').value.trim();if(!t)return toast('Paste a token first');localStorage.setItem('godseye_cesium_token',t);applyToken();toast('Token saved on this iPhone')};document.getElementById('clearToken').onclick=()=>{localStorage.removeItem('godseye_cesium_token');document.getElementById('tokenInput').value='';disablePhoto3D();toast('Token cleared')};document.getElementById('showToken').onclick=()=>{const i=document.getElementById('tokenInput');const s=i.type==='text';i.type=s?'password':'text';document.getElementById('showToken').textContent=s?'Show':'Hide'};document.getElementById('toggle3d').onclick=()=>photoEnabled?disablePhoto3D():enablePhoto3D();document.getElementById('toggleStreets').onclick=toggleStreets;
+createViewer();setTimeout(loadPublicCameras,1200);if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
-</body>
-</html>
+</body></html>
