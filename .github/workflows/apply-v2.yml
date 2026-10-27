@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'patch_v2.py'
+      - 'trigger-v2.txt'
   workflow_dispatch:
 
 permissions:
