@@ -1,0 +1,32 @@
+name: Add Orange NSW public camera presets
+
+on:
+  push:
+    paths:
+      - 'patch_orange_cameras.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply Orange public camera presets
+        run: python patch_orange_cameras.py
+
+      - name: Commit app update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "No index.html changes to commit"
+          else
+            git commit -m "Add Orange NSW public camera presets"
+            git push
+          fi
