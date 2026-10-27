@@ -401,6 +401,8 @@ document.getElementById("stopCamera").onclick = () => {
 // Push-to-talk voice control.
 let recognition = null;
 let voiceActive = false;
+let voiceBuffer = "";
+let voiceHandled = false;
 const voiceBtn = document.getElementById("voiceBtn");
 
 function voiceZoomIn() {
@@ -416,87 +418,141 @@ function voiceZoomOut() {
 }
 
 async function handleVoiceCommand(raw) {
-  const text = (raw || "").toLowerCase().trim();
-  if (!text) return;
-  subline.textContent = `Heard: ${raw}`;
-  toast(`Heard: “${raw}”`, 1800);
+  const original = (raw || "").trim();
+  const text = original.toLowerCase().replace(/[.,!?]/g, "").replace(/\s+/g, " ").trim();
+  if (!text) return false;
+  voiceHandled = true;
+  subline.textContent = `Heard: ${original}`;
+  toast(`Heard: “${original}”`, 1800);
 
-  if (text.includes("show my location") || text === "my location" || text.includes("where am i")) {
-    document.getElementById("locateBtn").click();
-    return;
-  }
-  if (text.includes("world view") || text === "world" || text.includes("show the world")) {
+  if (/^(home|go home|world|world view|show (me )?the world|zoom out to world)$/.test(text)) {
     document.getElementById("homeBtn").click();
     toast("World view");
-    return;
+    return true;
   }
-  if (text.includes("open cctv") || text.includes("show cctv") || text.includes("camera view")) {
+  if (/(my location|show my location|where am i|find me|locate me|go to my location)/.test(text)) {
+    document.getElementById("locateBtn").click();
+    return true;
+  }
+  if (/(open|show|view).*(cctv|camera|cameras)|^(cctv|cameras)$/.test(text)) {
     openSheet("cctvSheet");
-    return;
+    toast("CCTV opened");
+    return true;
   }
-  if (text.includes("turn on 3d") || text.includes("enable 3d") || text.includes("3d city")) {
+  if (/(turn on|enable|show|load).*(3d|three d)|^(3d|three d|3d city|3d cities)$/.test(text)) {
     await enablePhoto3D();
-    return;
+    return true;
   }
-  if (text.includes("turn off 3d") || text.includes("disable 3d")) {
+  if (/(turn off|disable|hide).*(3d|three d)/.test(text)) {
     disablePhoto3D();
-    return;
+    return true;
   }
-  if (text.includes("zoom in")) {
+  if (/zoom (right )?in|closer|get closer/.test(text)) {
     voiceZoomIn();
     toast("Zooming in");
-    return;
+    return true;
   }
-  if (text.includes("zoom out")) {
+  if (/zoom (right )?out|further|farther|get back/.test(text)) {
     voiceZoomOut();
     toast("Zooming out");
-    return;
+    return true;
+  }
+  if (/(open|show).*(settings|power up)/.test(text)) {
+    document.getElementById("settingsBtn").click();
+    return true;
+  }
+  if (/^(search|open search)$/.test(text)) {
+    document.getElementById("searchBtn").click();
+    return true;
   }
 
-  const prefixes = ["take me to ", "go to ", "fly to ", "search for ", "show me ", "find "];
-  for (const prefix of prefixes) {
-    if (text.startsWith(prefix)) {
-      const place = raw.slice(prefix.length).trim();
-      if (place) {
-        document.getElementById("searchInput").value = place;
-        document.getElementById("goSearch").click();
-      }
-      return;
+  const match = text.match(/^(?:ptease )?(?:take me to|go to|fly to|search for|find|show me)\s+(.+)$/i);
+  if (match && match[1]) {
+    const place = original.replace(/^(?:please )?(?:take me to|go to|fly to|search for|find|show me)\s+/i, "").trim();
+    if (place) {
+      document.getElementById("searchInput").value = place;
+      document.getElementById("goSearch").click();
+      return true;
     }
   }
 
-  if (text.split(/\s+/).length <= 8) {
-    document.getElementById("searchInput").value = raw;
+  if (text.split(/\s+/).length <= 7) {
+    document.getElementById("searchInput").value = original;
     document.getElementById("goSearch").click();
-  } else {
-    toast("Try: Go to Sydney, World view, Zoom in, or Open CCTV.", 3500);
+    return true;
   }
+
+  toast("Try: ‘Go to Orange NSW’, ‘Open CCTV’, ‘Zoom in’, ‘My location’, or ‘World view’.", 4200);
+  return false;
 }
 
 function makeRecognition() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) return null;
   const r = new SR();
-  r.lang = navigator.language || "en-AU";
-  r.interimResults = false;
-  r.maxAlternatives = 1;
+  r.lang = "en-AU";
+  r.interimResults = true;
+  r.maxAlternatives = 3;
   r.continuous = false;
+
   r.onstart = () => {
     voiceActive = true;
+    voiceBuffer = "";
+    voiceHandled = false;
     voiceBtn.classList.add("voiceListening");
     voiceBtn.textContent = "⏹";
-    toast("Listening…");
+    subline.textContent = "Listening…";
+    toast("Listening… say a command");
   };
+
+  r.onspeechstart = () => {
+    subline.textContent = "Hearing you…";
+  };
+
+  r.onresult = e => {
+    let combined = "";
+    let hasFinal = false;
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0]?.transcript || "";
+      combined += (combined ? " " : "") + t;
+      if (e.results[i].isFinal) hasFinal = true;
+    }
+    if (combined.trim()) {
+      voiceBuffer = combined.trim();
+      subline.textContent = `Hearing: ${voiceBuffer}`;
+    }
+    if (hasFinal && voiceBuffer && !voiceHandled) {
+      handleVoiceCommand(voiceBuffer);
+    }
+  };
+
+  r.onspeechend = () => {
+    try { r.stop(); } catch (_) {}
+  };
+
   r.onend = () => {
     voiceActive = false;
     voiceBtn.classList.remove("voiceListening");
-    voiceBtn.textContent = "🎙️";
+    voiceBtn.textContent = "🎄️";
+    if (voiceBuffer && !voiceHandled) {
+      handleVoiceCommand(voiceBuffer);
+    } else if (!voiceBuffer && !voiceHandled) {
+      subline.textContent = "No speech detected";
+      toast("I didn't catch that. Tap the mic and speak after ‘Listening…’", 3500);
+    }
   };
+
+  r.onnomatch = () => {
+    toast("I heard speech but couldn't recognise the command.");
+  };
+
   r.onerror = e => {
     console.error(e);
-    if (e.error !== "aborted") toast(`Voice error: ${e.error || "not available"}`);
+    if (e.error === "no-speech") toast("No speech detected. Try again and speak clearly.");
+    else if (e.error === "audio-capture") toast("Microphone audio isn't reaching Safari.");
+    else if (e.error === "not-allowed" || e.error === "service-not-allowed") toast("Allow microphone and speech recognition for this site.");
+    else if (e.error !== "aborted") toast(`Voice error: ${e.error || "not available"}`);
   };
-  r.onresult = e => handleVoiceCommand(e.results[0][0].transcript);
   return r;
 }
 
