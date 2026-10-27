@@ -10,16 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch iPhone voice recognition
+      - name: Final voice cleanup
         run: |
-          python3 -c 'from pathlib import Path; p=Path("index.html"); s=p.read_text(); s=s.replace("let voiceActive = false;\nconst voiceBtn", "let voiceActive = false;\nlet voiceTimer = null;\nconst voiceBtn"); s=s.replace("r.lang = navigator.language || \"en-AU\";", "r.lang = \"en-AU\";"); s=s.replace("r.interimResults = false;", "r.interimResults = true;"); s=s.replace("r.onresult = e => handleVoiceCommand(e.results[0][0].transcript);", "r.onresult = e => { const t = e.results[e.results.length - 1][0].transcript.trim(); if (!t) return; subline.textContent = `Hearing: ${t}`; clearTimeout(voiceTimer); voiceTimer = setTimeout(() => { handleVoiceCommand(t); try { r.stop(); } catch (_) {} }, 650); };"); p.write_text(s)'
-      - name: Expand common voice commands
-        run: |
-          python3 -c 'from pathlib import Path; p=Path("index.html"); s=p.read_text(); s=s.replace("text.includes(\"open cctv\") || text.includes(\"show cctv\") || text.includes(\"camera view\")", "text.includes(\"open cctv\") || text.includes(\"show cctv\") || text.includes(\"camera view\") || text.includes(\"open camera\") || text.includes(\"show cameras\")"); s=s.replace("text.includes(\"world view\") || text === \"world\" || text.includes(\"show the world\")", "text.includes(\"world view\") || text === \"world\" || text.includes(\"show the world\") || text === \"home\" || text.includes(\"go home\")"); p.write_text(s)'
+          python3 -c 'from pathlib import Path; p=Path("index.html"); s=p.read_text(); s=s.replace("(?:ptease )?", "(?:please )?"); s=s.replace("voiceBtn.textContent = \"🎄️\";", "voiceBtn.textContent = \"🎙️\";"); p.write_text(s)'
       - name: Commit voice fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Fix iPhone voice recognition" || exit 0
+          git commit -m "Finish iPhone voice control fix" || exit 0
           git push
