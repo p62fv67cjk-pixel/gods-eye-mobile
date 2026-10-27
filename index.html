@@ -11,7 +11,16 @@
   <link rel="apple-touch-icon" href="./icon.svg" />
   <title>God's Eye Mobile</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/cesium@latest/Build/Cesium/Cesium.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cesium@latest/Build/Cesium/Cesium.js">
+// Orange NSW verified public camera sources
+document.getElementById("orangePublicCam")?.addEventListener("click", () => {
+  window.open("https://argosatlas.com/en/cameras/australia/nsw/", "_blank", "noopener,noreferrer");
+});
+document.getElementById("orangeLiveTraffic")?.addEventListener("click", () => {
+  window.open("https://www.livetraffic.com/", "_blank", "noopener,noreferrer");
+});
+
+</script>
   <link href="https://cdn.jsdelivr.net/npm/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
 
   <style>
@@ -148,6 +157,15 @@
       <div class="handle"></div>
       <h2>CCTV viewer</h2>
       <p>View a camera you own, are authorised to access, or a public webcam. On iPhone, HLS streams ending in <b>.m3u8</b> work best. RTSP links need to be converted to HLS or WebRTC first.</p>
+      <div class="toggleline" id="orangePresetBlock">
+          <div><b>Orange NSW public camera</b><div class="mini">Current public live-snapshot source</div></div>
+          <button id="orangePublicCam">Open</button>
+        </div>
+        <div class="toggleline">
+          <div><b>Live Traffic NSW cameras</b><div class="mini">Official NSW camera map and snapshots</div></div>
+          <button id="orangeLiveTraffic">Open</button>
+        </div>
+        <p class="mini">Orange's currently verified public camera is a periodically refreshed still image, not a continuous video stream. Mobile speed-camera locations are not watchable CCTV feeds.</p>
       <label for="cameraUrl">Camera stream URL</label>
       <input id="cameraUrl" inputmode="url" autocomplete="off" placeholder="https://example.com/live/stream.m3u8" />
       <div class="row">
