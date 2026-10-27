@@ -466,7 +466,7 @@ async function handleVoiceCommand(raw) {
     return true;
   }
 
-  const match = text.match(/^(?:ptease )?(?:take me to|go to|fly to|search for|find|show me)\s+(.+)$/i);
+  const match = text.match(/^(?:please )?(?:take me to|go to|fly to|search for|find|show me)\s+(.+)$/i);
   if (match && match[1]) {
     const place = original.replace(/^(?:please )?(?:take me to|go to|fly to|search for|find|show me)\s+/i, "").trim();
     if (place) {
@@ -533,7 +533,7 @@ function makeRecognition() {
   r.onend = () => {
     voiceActive = false;
     voiceBtn.classList.remove("voiceListening");
-    voiceBtn.textContent = "🎄️";
+    voiceBtn.textContent = "🎙️";
     if (voiceBuffer && !voiceHandled) {
       handleVoiceCommand(voiceBuffer);
     } else if (!voiceBuffer && !voiceHandled) {
