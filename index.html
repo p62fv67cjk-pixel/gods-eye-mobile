@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#05080d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="God's Eye" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="./icon.svg" />
+  <title>God's Eye Mobile</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/cesium@latest/Build/Cesium/Cesium.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/cesium@latest/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+
+  <style>
+    :root {
+      --glass: rgba(9,14,23,.72);
+      --line: rgba(255,255,255,.13);
+      --text: #f4f8ff;
+      --muted: #aeb9c9;
+      --accent: #82ffe2;
+      --danger: #ff7e8b;
+    }
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body,#cesiumContainer { width:100%; height:100%; margin:0; overflow:hidden; background:#05080d; }
+    body { font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif; color:var(--text); }
+    #cesiumContainer { position:fixed; inset:0; }
+    .cesium-viewer-toolbar, .cesium-viewer-animationContainer, .cesium-viewer-timelineContainer,
+    .cesium-viewer-bottom { display:none !important; }
+
+    .top {
+      position:fixed; top:calc(env(safe-area-inset-top) + 10px); left:12px; right:12px;
+      display:flex; gap:8px; z-index:20; pointer-events:none;
+    }
+    .brand, .pill {
+      pointer-events:auto; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+      background:var(--glass); border:1px solid var(--line); border-radius:16px;
+      box-shadow:0 10px 30px rgba(0,0,0,.28);
+    }
+    .brand { padding:10px 12px; min-width:0; flex:1; }
+    .brand b { font-size:14px; letter-spacing:.08em; text-transform:uppercase; }
+    .brand small { display:block; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .pill {
+      width:44px; height:44px; display:grid; place-items:center; border-radius:50%;
+      color:var(--text); font-size:20px; cursor:pointer;
+    }
+
+    .dock {
+      position:fixed; left:12px; right:12px; bottom:calc(env(safe-area-inset-bottom) + 12px);
+      z-index:20; display:grid; grid-template-columns:repeat(4,1fr); gap:8px;
+      padding:8px; border-radius:22px; background:var(--glass); border:1px solid var(--line);
+      backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+      box-shadow:0 15px 35px rgba(0,0,0,.35);
+    }
+    .btn {
+      border:0; min-height:54px; border-radius:16px; color:var(--text);
+      background:rgba(255,255,255,.075); font-weight:700; font-size:11px;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    }
+    .btn span { font-size:21px; line-height:1; }
+    .btn.active { background:rgba(130,255,226,.16); outline:1px solid rgba(130,255,226,.35); }
+    .sheetWrap { position:fixed; inset:0; z-index:40; display:none; align-items:flex-end; background:rgba(0,0,0,.35); }
+    .sheetWrap.show { display:flex; }
+    .sheet {
+      width:100%; max-height:88vh; overflow:auto; padding:14px 16px calc(env(safe-area-inset-bottom) + 18px);
+      border-radius:26px 26px 0 0; background:#0a0f18; border-top:1px solid var(--line);
+      box-shadow:0 -20px 60px rgba(0,0,0,.45);
+    }
+    .handle { width:44px; height:5px; margin:0 auto 12px; border-radius:10px; background:rgba(255,255,255,.25); }
+    h2 { margin:4px 0 6px; font-size:22px; }
+    p { color:var(--muted); line-height:1.4; margin:6px 0 16px; }
+    label { font-size:12px; color:var(--muted); display:block; margin:12px 0 6px; }
+    input {
+      width:100%; border:1px solid var(--line); background:#111925; color:var(--text);
+      padding:14px 15px; border-radius:14px; font-size:16px; outline:none;
+    }
+    .row { display:flex; gap:8px; margin-top:10px; }
+    .action {
+      flex:1; border:0; border-radius:14px; padding:13px 14px; font-weight:800;
+      background:var(--accent); color:#05110e; font-size:14px;
+    }
+    .secondary { background:#172231; color:var(--text); }
+    .danger { background:#27161a; color:#ffadb6; }
+    .status {
+      position:fixed; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 88px);
+      z-index:25; max-width:88%; padding:9px 12px; border-radius:999px;
+      background:rgba(5,8,13,.82); border:1px solid var(--line); color:#eaf3ff; font-size:12px;
+      opacity:0; transition:.2s; pointer-events:none; text-align:center;
+    }
+    .status.show { opacity:1; }
+    .crosshair {
+      position:fixed; left:50%; top:50%; width:22px; height:22px; transform:translate(-50%,-50%); z-index:10;
+      opacity:.7; pointer-events:none;
+    }
+    .crosshair::before,.crosshair::after { content:""; position:absolute; background:rgba(255,255,255,.7); }
+    .crosshair::before { left:10px; top:0; width:1px; height:22px; }
+    .crosshair::after { top:10px; left:0; height:1px; width:22px; }
+    .mini { font-size:12px; color:var(--muted); }
+    .toggleline { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.07); }
+    .toggleline button { border:0; border-radius:999px; padding:8px 11px; background:#172231; color:var(--text); font-weight:700; }
+  </style>
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+  <div class="crosshair"></div>
+
+  <div class="top">
+    <div class="brand">
+      <b>GOD'S EYE</b>
+      <small id="subline">3D globe ready</small>
+    </div>
+    <button class="pill" id="settingsBtn" aria-label="Settings">⚙︎</button>
+  </div>
+
+  <div class="dock">
+    <button class="btn" id="homeBtn"><span>🌍</span>WORLD</button>
+    <button class="btn" id="locateBtn"><span>◎</span>ME</button>
+    <button class="btn" id="searchBtn"><span>⌕</span>SEARCH</button>
+    <button class="btn" id="photoBtn"><span>▦</span>3D CITY</button>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <div class="sheetWrap" id="searchSheet">
+    <div class="sheet">
+      <div class="handle"></div>
+      <h2>Fly somewhere</h2>
+      <p>Search a city, landmark or address using Cesium ion's geocoder.</p>
+      <label for="searchInput">Place</label>
+      <input id="searchInput" placeholder="e.g. Sydney Opera House" />
+      <div class="row">
+        <button class="action secondary" data-close="searchSheet">Cancel</button>
+        <button class="action" id="goSearch">Fly there</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheetWrap" id="settingsSheet">
+    <div class="sheet">
+      <div class="handle"></div>
+      <h2>Power Up</h2>
+      <p>Your Cesium ion token stays in this browser on this iPhone.</p>
+
+      <label for="tokenInput">Cesium ion access token</label>
+      <input id="tokenInput" type="password" autocomplete="off" placeholder="Paste token here" />
+      <div class="row">
+        <button class="action secondary" id="showToken">Show</button>
+        <button class="action" id="saveToken">Save token</button>
+      </div>
+
+      <div style="margin-top:18px">
+        <div class="toggleline">
+          <div><b>Photorealistic 3D</b><div class="mini">Google 3D Tiles via Cesium</div></div>
+          <button id="toggle3d">Load</button>
+        </div>
+        <div class="toggleline">
+          <div><b>Home screen mode</b><div class="mini">Safari → Share → Add to Home Screen</div></div>
+          <button id="installHelp">How</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="action danger" id="clearToken">Clear token</button>
+        <button class="action secondary" data-close="settingsSheet">Done</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+let viewer;
+let photoTileset = null;
+let photoEnabled = false;
+
+const statusEl = document.getElementById("status");
+const subline = document.getElementById("subline");
+
+function toast(msg, ms=2400) {
+  statusEl.textContent = msg;
+  statusEl.classList.add("show");
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(()=>statusEl.classList.remove("show"), ms);
+}
+
+function openSheet(id) { document.getElementById(id).classList.add("show"); }
+function closeSheet(id) { document.getElementById(id).classList.remove("show"); }
+
+document.querySelectorAll("[data-close]").forEach(b => b.onclick = () => closeSheet(b.dataset.close));
+document.querySelectorAll(".sheetWrap").forEach(w => w.addEventListener("click", e => { if(e.target===w) closeSheet(w.id); }));
+
+function getToken() { return localStorage.getItem("godseye_cesium_token") || ""; }
+
+function applyToken() {
+  const token = getToken();
+  if (token) Cesium.Ion.defaultAccessToken = token;
+  return !!token;
+}
+
+function createViewer() {
+  applyToken();
+  viewer = new Cesium.Viewer("cesiumContainer", {
+    animation:false,
+    timeline:false,
+    baseLayerPicker:false,
+    homeButton:false,
+    sceneModePicker:false,
+    navigationHelpButton:false,
+    geocoder:false,
+    infoBox:false,
+    selectionIndicator:false,
+    fullscreenButton:false,
+    shouldAnimate:true
+  });
+
+  viewer.scene.globe.enableLighting = true;
+  viewer.scene.fog.enabled = true;
+  viewer.scene.skyAtmosphere.show = true;
+  viewer.scene.requestRenderMode = true;
+  viewer.scene.maximumRenderTimeChange = Infinity;
+  viewer.camera.setView({
+    destination: Cesium.Cartesian3.fromDegrees(10, 15, 19000000)
+  });
+  viewer.scene.requestRender();
+}
+
+async function enablePhoto3D() {
+  if (!getToken()) {
+    openSheet("settingsSheet");
+    toast("Add your Cesium ion token first");
+    return;
+  }
+  applyToken();
+  try {
+    toast("Loading photorealistic 3D…", 4000);
+    if (!photoTileset) {
+      photoTileset = await Cesium.createGooglePhotorealistic3DTileset({
+        onlyUsingWithGoogleGeocoder: true
+      });
+      viewer.scene.primitives.add(photoTileset);
+    }
+    photoTileset.show = true;
+    photoEnabled = true;
+    document.getElementById("photoBtn").classList.add("active");
+    document.getElementById("toggle3d").textContent = "On";
+    subline.textContent = "Photorealistic 3D active";
+    viewer.scene.requestRender();
+    toast("3D Cities enabled");
+  } catch (e) {
+    console.error(e);
+    toast("Couldn’t load 3D tiles. Check token permissions.");
+  }
+}
+
+function disablePhoto3D() {
+  if (photoTileset) photoTileset.show = false;
+  photoEnabled = false;
+  document.getElementById("photoBtn").classList.remove("active");
+  document.getElementById("toggle3d").textContent = "Load";
+  subline.textContent = "3D globe ready";
+  viewer.scene.requestRender();
+  toast("3D Cities off");
+}
+
+document.getElementById("homeBtn").onclick = () => {
+  viewer.camera.flyTo({destination: Cesium.Cartesian3.fromDegrees(10,15,19000000), duration:1.6});
+};
+
+document.getElementById("locateBtn").onclick = () => {
+  if (!navigator.geolocation) return toast("Location isn’t available in this browser");
+  toast("Finding you…");
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const {longitude, latitude} = pos.coords;
+      viewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, 5000),
+        duration:2.0,
+        orientation:{heading:0, pitch:Cesium.Math.toRadians(-55), roll:0}
+      });
+      subline.textContent = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+      toast("Flying to your location");
+    },
+    err => toast("Location permission was not granted"),
+    {enableHighAccuracy:true, timeout:10000}
+  );
+};
+
+document.getElementById("searchBtn").onclick = () => {
+  openSheet("searchSheet");
+  setTimeout(()=>document.getElementById("searchInput").focus(), 150);
+};
+
+document.getElementById("goSearch").onclick = async () => {
+  const q = document.getElementById("searchInput").value.trim();
+  if (!q) return;
+  if (!getToken()) {
+    closeSheet("searchSheet");
+    openSheet("settingsSheet");
+    return toast("Add your Cesium ion token to search");
+  }
+  try {
+    applyToken();
+    toast("Searching…");
+    const provider = await Cesium.IonGeocodeProviderType.GOOGLE;
+    // Use Cesium ion REST geocoder directly to keep the mobile UI custom.
+    const url = `https://api.cesium.com/v1/geocode/search?text=${encodeURIComponent(q)}&access_token=${encodeURIComponent(getToken())}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Search failed");
+    const data = await res.json();
+    const f = data.features && data.features[0];
+    if (!f) return toast("No result found");
+    const c = f.geometry.coordinates;
+    closeSheet("searchSheet");
+    viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(c[0], c[1], 1800),
+      duration:2.2,
+      orientation:{heading:0, pitch:Cesium.Math.toRadians(-50), roll:0}
+    });
+    subline.textContent = f.properties?.label || q;
+    toast("Flying there");
+  } catch(e) {
+    console.error(e);
+    toast("Search failed. Check token/geocode permission.");
+  }
+};
+
+document.getElementById("photoBtn").onclick = () => photoEnabled ? disablePhoto3D() : enablePhoto3D();
+document.getElementById("settingsBtn").onclick = () => {
+  document.getElementById("tokenInput").value = getToken();
+  openSheet("settingsSheet");
+};
+
+document.getElementById("saveToken").onclick = () => {
+  const token = document.getElementById("tokenInput").value.trim();
+  if (!token) return toast("Paste a token first");
+  localStorage.setItem("godseye_cesium_token", token);
+  applyToken();
+  toast("Token saved on this iPhone");
+};
+
+document.getElementById("clearToken").onclick = () => {
+  localStorage.removeItem("godseye_cesium_token");
+  document.getElementById("tokenInput").value = "";
+  disablePhoto3D();
+  toast("Token cleared");
+};
+
+document.getElementById("showToken").onclick = () => {
+  const i = document.getElementById("tokenInput");
+  const showing = i.type === "text";
+  i.type = showing ? "password" : "text";
+  document.getElementById("showToken").textContent = showing ? "Show" : "Hide";
+};
+
+document.getElementById("toggle3d").onclick = () => photoEnabled ? disablePhoto3D() : enablePhoto3D();
+document.getElementById("installHelp").onclick = () => {
+  toast("In Safari: Share ↑ → Add to Home Screen");
+};
+
+createViewer();
+
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  navigator.serviceWorker.register("./sw.js").catch(()=>{});
+}
+</script>
+</body>
+</html>
