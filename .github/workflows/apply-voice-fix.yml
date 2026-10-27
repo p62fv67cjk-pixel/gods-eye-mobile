@@ -1,0 +1,213 @@
+name: Apply voice control fix
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-voice-fix.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch voice control
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          start=s.index('// Push-to-talk voice control.')
+          end=s.index('document.getElementById("settingsBtn").onclick', start)
+          new=r'''// Push-to-talk voice control.
+let recognition = null;
+let voiceActive = false;
+let voiceBuffer = "";
+let voiceHandled = false;
+const voiceBtn = document.getElementById("voiceBtn");
+
+function voiceZoomIn() {
+  const h = viewer.camera.positionCartographic.height;
+  viewer.camera.zoomIn(Math.max(100, h * 0.35));
+  viewer.scene.requestRender();
+}
+
+function voiceZoomOut() {
+  const h = viewer.camera.positionCartographic.height;
+  viewer.camera.zoomOut(Math.max(100, h * 0.7));
+  viewer.scene.requestRender();
+}
+
+async function handleVoiceCommand(raw) {
+  const original = (raw || "").trim();
+  const text = original.toLowerCase().replace(/[.,!?]/g, "").replace(/\s+/g, " ").trim();
+  if (!text) return false;
+  voiceHandled = true;
+  subline.textContent = `Heard: ${original}`;
+  toast(`Heard: “${original}”`, 1800);
+
+  if (/^(home|go home|world|world view|show (me )?the world|zoom out to world)$/.test(text)) {
+    document.getElementById("homeBtn").click();
+    toast("World view");
+    return true;
+  }
+  if (/(my location|show my location|where am i|find me|locate me|go to my location)/.test(text)) {
+    document.getElementById("locateBtn").click();
+    return true;
+  }
+  if (/(open|show|view).*(cctv|camera|cameras)|^(cctv|cameras)$/.test(text)) {
+    openSheet("cctvSheet");
+    toast("CCTV opened");
+    return true;
+  }
+  if (/(turn on|enable|show|load).*(3d|three d)|^(3d|three d|3d city|3d cities)$/.test(text)) {
+    await enablePhoto3D();
+    return true;
+  }
+  if (/(turn off|disable|hide).*(3d|three d)/.test(text)) {
+    disablePhoto3D();
+    return true;
+  }
+  if (/zoom (right )?in|closer|get closer/.test(text)) {
+    voiceZoomIn();
+    toast("Zooming in");
+    return true;
+  }
+  if (/zoom (right )?out|further|farther|get back/.test(text)) {
+    voiceZoomOut();
+    toast("Zooming out");
+    return true;
+  }
+  if (/(open|show).*(settings|power up)/.test(text)) {
+    document.getElementById("settingsBtn").click();
+    return true;
+  }
+  if (/^(search|open search)$/.test(text)) {
+    document.getElementById("searchBtn").click();
+    return true;
+  }
+
+  const match = text.match(/^(?:please )?(?:take me to|go to|fly to|search for|find|show me)\s+(.+)$/i);
+  if (match && match[1]) {
+    const place = original.replace(/^(?:please )?(?:take me to|go to|fly to|search for|find|show me)\s+/i, "").trim();
+    if (place) {
+      document.getElementById("searchInput").value = place;
+      document.getElementById("goSearch").click();
+      return true;
+    }
+  }
+
+  if (text.split(/\s+/).length <= 7) {
+    document.getElementById("searchInput").value = original;
+    document.getElementById("goSearch").click();
+    return true;
+  }
+
+  toast("Try: ‘Go to Orange NSW’, ‘Open CCTV’, ‘Zoom in’, ‘My location’, or ‘World view’.", 4200);
+  return false;
+}
+
+function makeRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  const r = new SR();
+  r.lang = "en-AU";
+  r.interimResults = true;
+  r.maxAlternatives = 3;
+  r.continuous = false;
+
+  r.onstart = () => {
+    voiceActive = true;
+    voiceBuffer = "";
+    voiceHandled = false;
+    voiceBtn.classList.add("voiceListening");
+    voiceBtn.textContent = "⏹";
+    subline.textContent = "Listening…";
+    toast("Listening… say a command");
+  };
+
+  r.onspeechstart = () => {
+    subline.textContent = "Hearing you…";
+  };
+
+  r.onresult = e => {
+    let combined = "";
+    let hasFinal = false;
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0]?.transcript || "";
+      combined += (combined ? " " : "") + t;
+      if (e.results[i].isFinal) hasFinal = true;
+    }
+    if (combined.trim()) {
+      voiceBuffer = combined.trim();
+      subline.textContent = `Hearing: ${voiceBuffer}`;
+    }
+    if (hasFinal && voiceBuffer && !voiceHandled) {
+      handleVoiceCommand(voiceBuffer);
+    }
+  };
+
+  r.onspeechend = () => {
+    try { r.stop(); } catch (_) {}
+  };
+
+  r.onend = () => {
+    voiceActive = false;
+    voiceBtn.classList.remove("voiceListening");
+    voiceBtn.textContent = "🎙️";
+    if (voiceBuffer && !voiceHandled) {
+      handleVoiceCommand(voiceBuffer);
+    } else if (!voiceBuffer && !voiceHandled) {
+      subline.textContent = "No speech detected";
+      toast("I didn't catch that. Tap the mic and speak after ‘Listening…’", 3500);
+    }
+  };
+
+  r.onnomatch = () => {
+    toast("I heard speech but couldn't recognise the command.");
+  };
+
+  r.onerror = e => {
+    console.error(e);
+    if (e.error === "no-speech") toast("No speech detected. Try again and speak clearly.");
+    else if (e.error === "audio-capture") toast("Microphone audio isn't reaching Safari.");
+    else if (e.error === "not-allowed" || e.error === "service-not-allowed") toast("Allow microphone and speech recognition for this site.");
+    else if (e.error !== "aborted") toast(`Voice error: ${e.error || "not available"}`);
+  };
+  return r;
+}
+
+voiceBtn.onclick = async () => {
+  if (voiceActive && recognition) {
+    recognition.stop();
+    return;
+  }
+  try {
+    if (navigator.mediaDevices?.getUserMedia) {
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      stream.getTracks().forEach(t => t.stop());
+    }
+  } catch (e) {
+    console.error(e);
+    toast("Microphone permission is required for voice control.");
+    return;
+  }
+
+  recognition = makeRecognition();
+  if (!recognition) {
+    toast("Speech recognition isn't available in this iPhone browser.");
+    return;
+  }
+  try { recognition.start(); }
+  catch (e) { console.error(e); toast("Couldn't start voice control."); }
+};
+
+'''
+          p.write_text(s[:start]+new+s[end:])
+          PY
+      - name: Commit voice fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Fix iPhone voice commands" || exit 0
+          git push
