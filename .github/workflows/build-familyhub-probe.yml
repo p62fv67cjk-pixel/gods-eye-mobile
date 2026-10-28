@@ -1,0 +1,38 @@
+name: Build Family Hub probe source artifact
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "fridge-tizen/**"
+      - ".github/workflows/build-familyhub-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required files
+        run: |
+          test -f fridge-tizen/config.xml
+          test -f fridge-tizen/index.html
+          test -f fridge-tizen/main.js
+          test -f fridge-tizen/style.css
+
+      - name: Create source bundle
+        run: |
+          cd fridge-tizen
+          zip -r ../FamilyHubProbe-source.zip config.xml index.html main.js style.css icon.svg README.md
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FamilyHubProbe-source
+          path: FamilyHubProbe-source.zip
+          if-no-files-found: error
