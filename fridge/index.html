@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#05070b" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <title>Family Hub</title>
+  <style>
+    :root{--bg:#05070b;--panel:#10141d;--panel2:#171d28;--text:#f7f8fb;--muted:#8c96a8;--line:rgba(255,255,255,.08);--glow:rgba(128,173,255,.28)}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;width:100%;height:100%;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif;overflow:hidden;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+    body:before{content:"";position:fixed;inset:-25%;background:radial-gradient(circle at 80% 5%,rgba(90,127,255,.17),transparent 34%),radial-gradient(circle at 8% 72%,rgba(0,208,255,.08),transparent 28%);pointer-events:none}
+    #app{height:100vh;min-height:100%;display:flex;flex-direction:column;padding:42px 42px 34px;position:relative}
+    header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px}
+    .brand{font-weight:800;letter-spacing:.18em;font-size:22px}.sub{color:var(--muted);font-size:18px;margin-top:8px;letter-spacing:.04em}
+    .clock{text-align:right;font-size:38px;font-weight:300;line-height:1}.date{color:var(--muted);font-size:16px;margin-top:8px}
+    .hero{padding:26px 28px;border:1px solid var(--line);background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(255,255,255,.018));border-radius:28px;margin-bottom:24px;box-shadow:0 26px 70px rgba(0,0,0,.25)}
+    .hero h1{font-size:35px;margin:0 0 8px}.hero p{font-size:17px;color:var(--muted);margin:0;line-height:1.45}
+    .section{font-size:15px;letter-spacing:.16em;color:#a8b1c1;margin:16px 2px 13px;text-transform:uppercase}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+    .tile{height:150px;border:1px solid var(--line);border-radius:26px;background:linear-gradient(145deg,var(--panel2),var(--panel));display:flex;flex-direction:column;justify-content:space-between;padding:22px;text-decoration:none;color:var(--text);box-shadow:inset 0 1px 0 rgba(255,255,255,.04);position:relative;overflow:hidden}
+    .tile:active{transform:scale(.985);background:#1c2230}.tile b{font-size:25px}.tile small{color:var(--muted);font-size:14px}.tile .mark{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-weight:900;background:rgba(255,255,255,.07);font-size:18px}
+    .live-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.live{height:104px;padding:17px;border-radius:22px}.live b{font-size:19px}.live small{font-size:12px}
+    footer{margin-top:auto;display:flex;justify-content:space-between;align-items:center;padding-top:18px;color:var(--muted);font-size:14px}
+    .pill{border:1px solid var(--line);background:rgba(255,255,255,.035);color:#cdd4df;border-radius:999px;padding:12px 17px;font-size:14px}
+    button{font:inherit;cursor:pointer}
+    #diag{position:fixed;inset:0;background:rgba(3,5,8,.98);z-index:20;padding:38px;overflow:auto;display:none;user-select:text;-webkit-user-select:text}
+    #diag.show{display:block}.diag-head{display:flex;justify-content:space-between;align-items:center;gap:20px}.diag-head h2{font-size:31px;margin:0}.close{background:#171d28;border:1px solid var(--line);color:white;border-radius:16px;padding:14px 20px}
+    .diag-note{color:var(--muted);font-size:16px;line-height:1.45;margin:17px 0 22px}.result{display:flex;justify-content:space-between;gap:20px;padding:17px 4px;border-bottom:1px solid var(--line);font-size:16px}.ok{color:#70e6a6}.no{color:#ff8089}.maybe{color:#ffd47c}.ua{white-space:normal;word-break:break-word;text-align:right;max-width:63%;color:#bac3d1}
+    #enterFull{position:fixed;inset:0;z-index:30;background:linear-gradient(160deg,#05070b,#10172a);display:flex;align-items:center;justify-content:center;padding:55px;text-align:center}
+    #enterFull.hidden{display:none}.start-card{max-width:760px}.start-card h1{font-size:52px;margin:0 0 18px}.start-card p{font-size:22px;line-height:1.5;color:#aab4c4;margin:0 0 34px}.start{border:0;background:#f3f6ff;color:#080a0e;border-radius:24px;padding:22px 42px;font-size:22px;font-weight:800;min-width:300px}
+    @media (max-height:1500px){#app{padding:26px}.hero{padding:20px}.tile{height:124px}.live{height:90px}.section{margin-top:11px}}
+  </style>
+</head>
+<body>
+  <div id="enterFull">
+    <div class="start-card">
+      <h1>Family Hub</h1>
+      <p>Tap once to enter the clean entertainment screen. This also gives the browser permission to request fullscreen mode.</p>
+      <button class="start" id="startBtn">ENTER</button>
+    </div>
+  </div>
+
+  <main id="app">
+    <header>
+      <div><div class="brand">GOD'S EYE</div><div class="sub">Family Hub Entertainment</div></div>
+      <div><div class="clock" id="clock">--:--</div><div class="date" id="date"></div></div>
+    </header>
+
+    <section class="hero">
+      <h1>What do you want to watch?</h1>
+      <p>Streaming, sport and Australian live TV from one fridge-sized launchpad.</p>
+    </section>
+
+    <div class="section">Streaming</div>
+    <div class="grid">
+      <a class="tile" data-service="Netflix" href="https://www.netflix.com/browse"><span class="mark">N</span><div><b>Netflix</b><br><small>Open web player</small></div></a>
+      <a class="tile" data-service="Disney+" href="https://www.disneyplus.com/"><span class="mark">D+</span><div><b>Disney+</b><br><small>Open web player</small></div></a>
+      <a class="tile" data-service="Prime Video" href="https://www.primevideo.com/"><span class="mark">P</span><div><b>Prime Video</b><br><small>Open web player</small></div></a>
+      <a class="tile" data-service="Stan" href="https://www.stan.com.au/"><span class="mark">S</span><div><b>Stan</b><br><small>Open web player</small></div></a>
+      <a class="tile" data-service="Kayo" href="https://kayosports.com.au/"><span class="mark">K</span><div><b>Kayo</b><br><small>Sport & live events</small></div></a>
+      <a class="tile" data-service="YouTube" href="https://www.youtube.com/"><span class="mark">▶</span><div><b>YouTube</b><br><small>Video & live channels</small></div></a>
+    </div>
+
+    <div class="section">Live TV</div>
+    <div class="live-grid">
+      <a class="tile live" href="https://iview.abc.net.au/"><div><b>ABC</b><br><small>iview</small></div></a>
+      <a class="tile live" href="https://www.sbs.com.au/ondemand/"><div><b>SBS</b><br><small>On Demand</small></div></a>
+      <a class="tile live" href="https://7plus.com.au/"><div><b>7</b><br><small>7plus</small></div></a>
+      <a class="tile live" href="https://www.9now.com.au/"><div><b>9</b><br><small>9Now</small></div></a>
+      <a class="tile live" href="https://10.com.au/"><div><b>10</b><br><small>10</small></div></a>
+      <a class="tile live" href="https://www.youtube.com/@abcnewsaustralia/live"><div><b>LIVE</b><br><small>ABC News</small></div></a>
+    </div>
+
+    <footer>
+      <span id="status">Tizen browser test ready</span>
+      <button class="pill" id="diagBtn">SYSTEM TEST</button>
+    </footer>
+  </main>
+
+  <section id="diag">
+    <div class="diag-head"><h2>Family Hub capability test</h2><button class="close" id="closeDiag">CLOSE</button></div>
+    <p class="diag-note">This does not bypass DRM. It checks whether this browser exposes the normal media features streaming services rely on. Photograph this screen and send it back to ChatGPT.</p>
+    <div id="results"></div>
+  </section>
+
+<script>
+(function(){
+  const $=s=>document.querySelector(s);
+  const clock=$('#clock'), date=$('#date');
+  function tick(){const d=new Date();clock.textContent=d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});date.textContent=d.toLocaleDateString([], {weekday:'short',day:'numeric',month:'short'});}tick();setInterval(tick,10000);
+
+  async function fullscreen(){
+    const el=document.documentElement;
+    try{if(el.requestFullscreen) await el.requestFullscreen(); else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();}catch(e){}
+  }
+  $('#startBtn').addEventListener('click',async()=>{await fullscreen();$('#enterFull').classList.add('hidden');try{if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('portrait');}catch(e){}});
+
+  document.querySelectorAll('a.tile').forEach(a=>a.addEventListener('click',()=>{localStorage.setItem('familyHubLastService',a.dataset.service||a.textContent.trim());}));
+
+  function row(name,value,state){const cls=state===true?'ok':state===false?'no':'maybe';return `<div class="result"><span>${name}</span><span class="${cls} ua">${String(value)}</span></div>`;}
+  async function keySystem(name){
+    if(!navigator.requestMediaKeySystemAccess) return false;
+    const configs=[{initDataTypes:['cenc'],audioCapabilities:[{contentType:'audio/mp4; codecs="mp4a.40.2"'}],videoCapabilities:[{contentType:'video/mp4; codecs="avc1.42E01E"'}]}];
+    try{await navigator.requestMediaKeySystemAccess(name,configs);return true;}catch(e){return false;}
+  }
+  async function runDiag(){
+    const r=$('#results');r.innerHTML=row('User agent',navigator.userAgent,null)+row('Screen',`${screen.width} × ${screen.height} @ ${window.devicePixelRatio||1}x`,null)+row('Fullscreen API',!!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen),!!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen))+row('Encrypted Media Extensions',!!navigator.requestMediaKeySystemAccess,!!navigator.requestMediaKeySystemAccess)+row('Media Source Extensions',!!window.MediaSource,!!window.MediaSource)+row('Service Worker',('serviceWorker' in navigator),('serviceWorker' in navigator));
+    const v=document.createElement('video');
+    r.innerHTML+=row('Native HLS',v.canPlayType('application/vnd.apple.mpegurl')||'no',!!v.canPlayType('application/vnd.apple.mpegurl'));
+    if(window.MediaSource&&MediaSource.isTypeSupported){r.innerHTML+=row('H.264 MSE',MediaSource.isTypeSupported('video/mp4; codecs="avc1.42E01E"'),MediaSource.isTypeSupported('video/mp4; codecs="avc1.42E01E"'));r.innerHTML+=row('VP9 MSE',MediaSource.isTypeSupported('video/webm; codecs="vp9"'),MediaSource.isTypeSupported('video/webm; codecs="vp9"'));}
+    r.innerHTML+=row('Widevine CDM','testing…',null);const wide=await keySystem('com.widevine.alpha');r.lastElementChild.outerHTML=row('Widevine CDM',wide?'AVAILABLE':'NOT AVAILABLE',wide);
+    const play=await keySystem('com.microsoft.playready');r.innerHTML+=row('PlayReady CDM',play?'AVAILABLE':'NOT AVAILABLE',play);
+  }
+  $('#diagBtn').addEventListener('click',async()=>{$('#diag').classList.add('show');await runDiag();});
+  $('#closeDiag').addEventListener('click',()=>$('#diag').classList.remove('show'));
+
+  if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{});}
+})();
+</script>
+</body>
+</html>
