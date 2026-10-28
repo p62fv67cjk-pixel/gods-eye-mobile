@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<title>Family Hub native API test</title>
+<style>
+:root{--bg:#05070b;--panel:#111722;--text:#f7f8fb;--muted:#9ba6b8;--line:rgba(255,255,255,.1);--ok:#72e3a5;--no:#ff848e;--maybe:#ffd36b}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}body{padding:34px}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:18px}.top h1{font-size:38px;margin:0 0 8px}.sub{font-size:18px;color:var(--muted)}a{color:inherit;text-decoration:none}.btn{display:inline-block;padding:14px 19px;border:1px solid var(--line);border-radius:18px;background:var(--panel)}.note{margin:25px 0;color:#c4ccda;line-height:1.5;font-size:17px}.row{display:flex;justify-content:space-between;gap:20px;padding:18px 4px;border-bottom:1px solid var(--line);font-size:17px}.value{text-align:right;max-width:62%;word-break:break-word}.ok{color:var(--ok)}.no{color:var(--no)}.maybe{color:var(--maybe)}.footer{margin-top:28px;color:var(--muted);font-size:14px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="top"><div><h1>Native API test</h1><div class="sub">Family Hub / Tizen browser</div></div><a class="btn" href="./">BACK</a></div>
+<p class="note">This checks whether Samsung exposes native Tizen or AVPlay objects to an ordinary browser page. It does not alter the fridge and does not bypass DRM.</p>
+<div id="out"></div>
+<p class="footer">Photograph this screen and send it back to ChatGPT. If AVPlay is unavailable here, the next experiment is a signed Tizen app package using the same launcher UI.</p>
+<script>
+(function(){
+ const out=document.getElementById('out');
+ function add(name,val,state){const d=document.createElement('div');d.className='row';const a=document.createElement('span');a.textContent=name;const b=document.createElement('span');b.className='value '+(state===true?'ok':state===false?'no':'maybe');b.textContent=String(val);d.append(a,b);out.append(d)}
+ const has=(expr)=>{try{return !!expr()}catch(e){return false}};
+ add('User agent',navigator.userAgent,null);
+ add('window.tizen',typeof window.tizen,typeof window.tizen!=='undefined');
+ add('window.webapis',typeof window.webapis,typeof window.webapis!=='undefined');
+ add('webapis.avplay',has(()=>window.webapis&&window.webapis.avplay),has(()=>window.webapis&&window.webapis.avplay));
+ add('webapis.productinfo',has(()=>window.webapis&&window.webapis.productinfo),has(()=>window.webapis&&window.webapis.productinfo));
+ add('navigator.requestMediaKeySystemAccess',typeof navigator.requestMediaKeySystemAccess,typeof navigator.requestMediaKeySystemAccess==='function');
+ add('window.MediaKeys',typeof window.MediaKeys,typeof window.MediaKeys!=='undefined');
+ add('window.MediaKeySystemAccess',typeof window.MediaKeySystemAccess,typeof window.MediaKeySystemAccess!=='undefined');
+ const hp=window.HTMLMediaElement&&HTMLMediaElement.prototype;
+ add('HTMLMediaElement.setMediaKeys',hp&&typeof hp.setMediaKeys,hp&&typeof hp.setMediaKeys==='function');
+ add('Legacy webkitGenerateKeyRequest',hp&&typeof hp.webkitGenerateKeyRequest,hp&&typeof hp.webkitGenerateKeyRequest==='function');
+ add('Legacy webkitAddKey',hp&&typeof hp.webkitAddKey,hp&&typeof hp.webkitAddKey==='function');
+ add('Legacy webkitCancelKeyRequest',hp&&typeof hp.webkitCancelKeyRequest,hp&&typeof hp.webkitCancelKeyRequest==='function');
+ add('Fullscreen enabled',!!(document.fullscreenEnabled||document.webkitFullscreenEnabled),!!(document.fullscreenEnabled||document.webkitFullscreenEnabled));
+ add('MediaSource',typeof window.MediaSource,typeof window.MediaSource!=='undefined');
+ add('Secure context',window.isSecureContext,window.isSecureContext===true);
+})();
+</script>
+</body>
+</html>
