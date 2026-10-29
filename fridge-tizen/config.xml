@@ -2,7 +2,7 @@
 <widget xmlns="http://www.w3.org/ns/widgets"
         xmlns:tizen="http://tizen.org/ns/widgets"
         id="https://godseye.local/familyhub"
-        version="2.0.0"
+        version="2.1.0"
         viewmodes="fullscreen">
   <tizen:application id="GDEYEHUB01.GodsEyeFamilyHub"
                      package="GDEYEHUB01"
