@@ -3,30 +3,59 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
-  <title>Family Hub Probe</title>
+  <meta name="theme-color" content="#05070b">
+  <title>God's Eye Family Hub</title>
   <link rel="stylesheet" href="style.css">
+  <script src="$WEBAPIS/webapis/webapis.js"></script>
 </head>
 <body>
   <main class="app">
     <header>
       <div>
         <div class="eyebrow">GOD'S EYE</div>
-        <h1>Family Hub native probe</h1>
-        <p>Packaged Tizen app test</p>
+        <h1>Family Hub Entertainment</h1>
+        <p>Native Tizen build · fridge-only experiment</p>
       </div>
-      <button id="run">RUN TEST</button>
+      <span class="status-pill" id="nativeStatus">CHECKING</span>
     </header>
 
-    <section class="card intro">
-      <strong>Goal</strong>
-      <p>This build checks what Samsung exposes to an installed Tizen app that was hidden from the normal Family Hub browser.</p>
+    <section class="card hero">
+      <strong>Native engine test</strong>
+      <p>This installed build checks whether Family Hub exposes Tizen, Samsung AVPlay and DRM functions that Samsung Internet hides.</p>
+      <div class="actions">
+        <button id="run">RUN NATIVE TEST</button>
+        <button id="avplayTest" class="secondary" disabled>TEST AVPLAY VIDEO</button>
+        <button id="drmTest" class="secondary" disabled>TEST DRM ENTRYPOINT</button>
+      </div>
     </section>
 
+    <section id="playerStage" class="player-stage" hidden>
+      <object id="avPlayer" type="application/avplayer"></object>
+      <div class="player-label" id="playerLabel">AVPlay test</div>
+    </section>
+
+    <div class="section-title">Streaming targets</div>
+    <section class="services" id="services">
+      <button data-url="https://www.netflix.com/browse"><b>Netflix</b><small>Official web player</small></button>
+      <button data-url="https://www.disneyplus.com/"><b>Disney+</b><small>Official web player</small></button>
+      <button data-url="https://tv.apple.com/au"><b>Apple TV+</b><small>Official web player</small></button>
+      <button data-url="https://www.primevideo.com/"><b>Prime Video</b><small>Official web player</small></button>
+      <button data-url="https://www.stan.com.au/"><b>Stan</b><small>Official web player</small></button>
+      <button data-url="https://kayosports.com.au/"><b>Kayo</b><small>Official web player</small></button>
+      <button data-url="https://www.youtube.com/"><b>YouTube</b><small>Video & live</small></button>
+      <button data-url="https://iview.abc.net.au/"><b>ABC</b><small>iview</small></button>
+      <button data-url="https://www.sbs.com.au/ondemand/"><b>SBS</b><small>On Demand</small></button>
+      <button data-url="https://7plus.com.au/"><b>7</b><small>7plus</small></button>
+      <button data-url="https://www.9now.com.au/"><b>9</b><small>9Now</small></button>
+      <button data-url="https://10.com.au/"><b>10</b><small>10</small></button>
+    </section>
+
+    <div class="section-title">Native capability report</div>
     <section id="results" class="results"></section>
 
     <footer>
       <span id="status">Ready</span>
-      <span>v1.0.0</span>
+      <span>v2.0.0</span>
     </footer>
   </main>
   <script src="main.js"></script>
