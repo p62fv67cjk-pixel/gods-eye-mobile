@@ -1,4 +1,4 @@
-name: Build Family Hub probe source artifact
+name: Build God's Eye Family Hub source artifact
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 jobs:
-  package-source:
+  validate-and-package:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -24,15 +24,22 @@ jobs:
           test -f fridge-tizen/index.html
           test -f fridge-tizen/main.js
           test -f fridge-tizen/style.css
+          test -f fridge-tizen/icon.svg
+
+      - name: Check JavaScript syntax
+        run: node --check fridge-tizen/main.js
+
+      - name: Check Tizen config XML syntax
+        run: python3 -c "import xml.etree.ElementTree as ET; ET.parse('fridge-tizen/config.xml'); print('config.xml OK')"
 
       - name: Create source bundle
         run: |
           cd fridge-tizen
-          zip -r ../FamilyHubProbe-source.zip config.xml index.html main.js style.css icon.svg README.md
+          zip -r ../GodsEye-FamilyHub-v2-source.zip config.xml index.html main.js style.css icon.svg README.md
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: FamilyHubProbe-source
-          path: FamilyHubProbe-source.zip
+          name: GodsEye-FamilyHub-v2-source
+          path: GodsEye-FamilyHub-v2-source.zip
           if-no-files-found: error
