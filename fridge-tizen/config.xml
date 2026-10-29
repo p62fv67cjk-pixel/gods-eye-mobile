@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <widget xmlns="http://www.w3.org/ns/widgets"
         xmlns:tizen="http://tizen.org/ns/widgets"
-        id="https://godseye.local/familyhubprobe"
-        version="1.0.0"
+        id="https://godseye.local/familyhub"
+        version="2.0.0"
         viewmodes="fullscreen">
-  <tizen:application id="GDEYEHUB01.FamilyHubProbe"
+  <tizen:application id="GDEYEHUB01.GodsEyeFamilyHub"
                      package="GDEYEHUB01"
                      required_version="7.0"/>
   <content src="index.html"/>
-  <name>Family Hub Probe</name>
+  <name>God's Eye Family Hub</name>
   <icon src="icon.svg"/>
   <access origin="*" subdomains="true"/>
   <tizen:privilege name="http://tizen.org/privilege/internet"/>
+  <tizen:privilege name="http://developer.samsung.com/privilege/drmplay"/>
   <tizen:setting screen-orientation="portrait"
                  context-menu="disable"
                  background-support="disable"
