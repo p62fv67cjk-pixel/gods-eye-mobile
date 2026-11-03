@@ -1,0 +1,21 @@
+{
+  "updated": "2026-11-03",
+  "policy": "Only authoritative, publicly disclosed information is included. Never infer a home address or identify an unnamed suspect.",
+  "records": [
+    {
+      "id": "nswpf-narrabeen-2026-10",
+      "type": "public_safety_alert",
+      "status": "alleged / investigation",
+      "title": "Sexual-offence investigation — Narrabeen walking tracks",
+      "name": null,
+      "locationLabel": "Narrabeen Lagoon / walking tracks, NSW",
+      "lat": -33.7189,
+      "lon": 151.2964,
+      "locationPrecision": "general incident area",
+      "summary": "NSW Police appealed for information after multiple alleged sexual touching incidents on walking trails in the Narrabeen area. CCTV images were later released of a male police said may be able to assist. This marker represents the publicly reported incident area, not a person's residence.",
+      "published": "2026-10-17",
+      "sourceLabel": "NSW Police Force",
+      "sourceUrl": "https://www.police.nsw.gov.au/news/news_article?sq_content_src=%2BdXJsPWh0dHBzJTNBJTJGJTJGZWJpenByZC5wb2xpY2UubnN3Lmdvdi5hdSUyRm1lZGlhJTJGMTI5MjEwLmh0bWwmYWxsPTE%3D"
+    }
+  ]
+}
