@@ -1,5 +1,5 @@
-const CACHE="gods-eye-v8";
-const CORE=["./","./index.html","./manifest.webmanifest","./icon.svg","./fixes-v7.js"];
+const CACHE="gods-eye-v9";
+const CORE=["./","./index.html","./manifest.webmanifest","./icon.svg","./fixes-v7.js","./public-safety.js","./data/sexual-safety.json"];
 self.addEventListener("install",e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)))});
 self.addEventListener("activate",e=>e.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))),self.clients.claim()])));
 self.addEventListener("fetch",e=>{
@@ -9,12 +9,13 @@ self.addEventListener("fetch",e=>{
     e.respondWith(fetch(e.request,{cache:"no-store"}).then(async r=>{
       let html=await r.text();
       if(!html.includes("fixes-v7.js"))html=html.replace("</body>",'<script src="./fixes-v7.js"></script></body>');
+      if(!html.includes("public-safety.js"))html=html.replace("</body>",'<script src="./public-safety.js"></script></body>');
       const headers=new Headers(r.headers);headers.delete("content-length");
       return new Response(html,{status:r.status,statusText:r.statusText,headers});
     }).catch(()=>caches.match("./index.html")));
     return;
   }
-  if(u.pathname.endsWith("/data/cameras.json")){
+  if(u.pathname.endsWith("/data/cameras.json")||u.pathname.endsWith("/data/sexual-safety.json")){
     e.respondWith(fetch(e.request,{cache:"no-store"}));
     return;
   }
